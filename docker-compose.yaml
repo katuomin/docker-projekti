@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
 
   database:
-      image: postgres:15-alpine
+      image: postgres:17-alpine
       container_name: database-kontti
       environment:
         POSTGRES_USER: demo_user
