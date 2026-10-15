@@ -45,9 +45,13 @@ app.get('/api/notes', async (req, res) => {
 app.post('/api/notes', async (req, res) => {
     try {
         const { content } = req.body;
-        const result = await pool.query('INSERT INTO notes (content) VALUES (\$1) RETURNING *', [content]);
-        res.status(2.1).json(result.rows[0]);
+        
+        // Käytetään backtick-hipsuja (``), jolloin \$1 pysyy puhtaana ilman takakenoviivoja
+        const result = await pool.query(`INSERT INTO notes (content) VALUES ($1) RETURNING *`, [content]);
+        
+        res.status(201).json(result.rows);
     } catch (err) {
+        console.error("Virhe tallennuksessa:", err.message);
         res.status(500).json({ error: err.message });
     }
 });

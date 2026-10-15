@@ -1,10 +1,117 @@
 <!DOCTYPE html>
-<html>
+<html lang="fi">
 <head>
-    <title>Page Title</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker & Mikropalvelut Opetusympäristö</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background: #f4f4f9; color: #333; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #2496ed; }
+        pre { background: #2d3748; color: #fff; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .note-section { margin-top: 40px; padding-top: 20px; border-top: 2px solid #eee; }
+        textarea { width: 100%; height: 80px; margin-bottom: 10px; padding: 10px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; resize: vertical; }
+        button { background: #2496ed; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        button:hover { background: #1d78c1; }
+        ul { list-style-type: none; padding: 0; }
+        li { background: #eef6fc; margin: 8px 0; padding: 12px; border-left: 5px solid #2496ed; border-radius: 4px; word-wrap: break-word; }
+        .error-msg { color: #dc3545; font-weight: bold; margin-bottom: 10px; }
+    </style>
 </head>
-    <body>
-        <h1>This is a Heading</h1>
-        <p>This is a paragraph.</p>
-    </body>
+<body>
+<div class="container">
+    <h1>Mitä on Docker ja Mikropalvelut?</h1>
+    <p>Tämä sivu pyörii omassa <strong>Nginx-kontissaan</strong>. Se on osa mikropalveluympäristöä, jonka muut osat käsittelevät dataa taustalla.</p>
+
+    <h2>1. Docker ja Kontitus</h2>
+    <p>Docker mahdollistaa sovellusten ja niiden riippuvuuksien sulkemisen standardoituun pakettiin eli <em>konttiin</em>.</p>
+    <pre>docker run -d -p 80:80 nginx</pre>
+
+    <h2>2. Docker Compose</h2>
+    <p>Kun sovellus koostuu useasta palvelusta, käytetään <strong>Docker Composea</strong>. Sen avulla koko mikropalveluympäristö käynnistetään yhdellä komennolla.</p>
+    <pre>docker compose up --build -d</pre>
+
+    <!-- LAALENNUSOSA: MUISTIINPANOT -->
+    <div class="note-section">
+        <h2>Omat muistiinpanot (Laajennusosa)</h2>
+        <p>Tämä osio kommunikoi selainpohjaisesti <strong>notes-api</strong> -kontin kanssa (portti 3000), joka tallentaa datan tietokantaan.</p>
+        
+        <div id="statusMessage" class="error-msg"></div>
+
+        <textarea id="noteInput" placeholder="Kirjoita uusi muistiinpano tähän..."></textarea>
+        <button onclick="addNote()">Tallenna muistiinpano</button>
+        
+        <h3>Tallennetut muistiinpanot:</h3>
+        <ul id="notesList"></ul>
+    </div>
+</div>
+
+<script>
+    // API:n osoite (paikallisessa testauksessa localhost:3000)
+    const API_URL = 'http://localhost:3000/api/notes';
+
+    // 1. LUKEMINEN (Hae muistiinpanot API:sta)
+    async function fetchNotes() {
+        const list = document.getElementById('notesList');
+        const statusDiv = document.getElementById('statusMessage');
+        
+        try {
+            const res = await fetch(API_URL);
+            if (!res.ok) throw new Error('Palvelinvirhe');
+            
+            const notes = await res.json();
+            statusDiv.textContent = ''; // Tyhjennetään mahdolliset virheet
+            list.innerHTML = '';
+            
+            if (notes.length === 0) {
+                list.innerHTML = '<li>Ei vielä muistiinpanoja. Kirjoita jotain yläpuolelle!</li>';
+                return;
+            }
+
+            notes.forEach(n => {
+                const li = document.createElement('li');
+                li.textContent = n.content;
+                list.appendChild(li);
+            });
+        } catch (err) { 
+            console.error('Virhe haettaessa muistiinpanoja:', err); 
+            statusDiv.textContent = 'Yhteys API-konttiin epäonnistui. Varmista, että notes-api-kontti pyörii portissa 3000.';
+        }
+    }
+
+    // 2. KIRJOITTAMINEN (Lähetä uusi muistiinpano API:lle)
+    async function addNote() {
+        const input = document.getElementById('noteInput');
+        const statusDiv = document.getElementById('statusMessage');
+        const content = input.value.trim();
+
+        if (!content) return; // Älä lähetä tyhjää
+
+        try {
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content })
+        });
+
+        // Jos status ei ole 2xx, heitetään virhe suoraan catch-lohkoon
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Palvelinvirhe statuksella ' + res.status);
+        }
+
+        input.value = ''; 
+        statusDiv.textContent = '';
+        fetchNotes(); // Haetaan päivittynyt lista
+    } catch (err) { 
+        console.error('Virhe tallennettaessa:', err); 
+        statusDiv.textContent = 'Virhe tallennettaessa: ' + err.message;
+    }
+
+    }
+
+    // Haetaan muistiinpanot automaattisesti kun sivu avataan
+    fetchNotes();
+</script>
+</body>
 </html>
