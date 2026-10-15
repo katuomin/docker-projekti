@@ -1,0 +1,36 @@
+services:
+  web:
+    build: ./web
+    container_name: web-kontti
+    ports:
+      - "8080:80"
+    networks:
+     - frontend-network
+    restart: always
+
+  notes-api:
+    build: ./notes-api
+    container_name: api-kontti
+    ports:
+      - "3000:3000"
+    networks:
+     - frontend-network
+     - backend-network
+    restart: always
+
+  database:
+    build: ./database
+    container_name: database-kontti
+    # tää voi olla turha
+    ports:
+     - "5432:5432"
+    networks:
+     - backend-network
+
+
+
+networks:
+  frontend-network:
+    driver: bridge
+  backend-network:
+    driver: bridge
