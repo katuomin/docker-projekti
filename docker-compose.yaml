@@ -40,20 +40,35 @@ services:
     networks:
      - frontend-network
      - backend-network
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:3000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
     restart: unless-stopped
 
   database:
-      image: postgres:17-alpine
-      container_name: database-kontti
-      environment:
-        POSTGRES_USER: demo_user
-        POSTGRES_PASSWORD: demo_password
-        POSTGRES_DB: demo_notes
-      volumes:
-        - pgdata:/var/lib/postgresql/data
-      networks:
-        - backend-network
-      restart: unless-stopped
+    image: postgres:17-alpine
+    container_name: database-kontti
+    environment:
+      POSTGRES_USER: demo_user
+      POSTGRES_PASSWORD: demo_password
+      POSTGRES_DB: demo_notes
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
 
 volumes:
   pgdata:
@@ -62,4 +77,4 @@ networks:
   frontend-network:
     driver: bridge
   backend-network:
-    driver: bridge
+    internal: true
