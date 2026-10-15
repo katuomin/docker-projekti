@@ -1,0 +1,17 @@
+services:
+  web:
+    build: ./web
+    ports:
+      - "8080:80"
+    networks:
+      - frontend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+networks:
+  frontend:
+    driver: bridge
