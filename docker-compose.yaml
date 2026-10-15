@@ -2,8 +2,6 @@ services:
   web:
     build: ./web
     container_name: web-kontti
-    ports:
-      - "8080:80"
     networks:
      - frontend-network
     healthcheck:
@@ -15,6 +13,7 @@ services:
 
   proxy:
     image: nginx:alpine
+    container_name: proxy-kontti
     ports:
       - "8080:80"
     volumes:
@@ -31,19 +30,30 @@ services:
     container_name: api-kontti
     ports:
       - "3000:3000"
+    environment:
+      DB_HOST: database
+      DB_USER: demo_user
+      DB_PASSWORD: demo_password
+      DB_NAME: demo_notes
+      DB_PORT: 5432
+      PORT: 3000
     networks:
      - frontend-network
      - backend-network
-    restart: always
+    restart: unless-stopped
 
   database:
-    build: ./database
-    container_name: database-kontti
-    # tää voi olla turha
-    ports:
-     - "5432:5432"
-    networks:
-     - backend-network
+      image: postgres:15-alpine
+      container_name: database-kontti
+      environment:
+        POSTGRES_USER: demo_user
+        POSTGRES_PASSWORD: demo_password
+        POSTGRES_DB: demo_notes
+      volumes:
+        - pgdata:/var/lib/postgresql/data
+      networks:
+        - backend-network
+      restart: unless-stopped
 
 
 
