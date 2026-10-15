@@ -6,7 +6,25 @@ services:
       - "8080:80"
     networks:
      - frontend-network
-    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  proxy:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - frontend
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped
 
   notes-api:
     build: ./notes-api
