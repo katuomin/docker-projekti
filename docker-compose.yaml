@@ -55,7 +55,8 @@ services:
         - backend-network
       restart: unless-stopped
 
-
+volumes:
+  pgdata:
 
 networks:
   frontend-network:
