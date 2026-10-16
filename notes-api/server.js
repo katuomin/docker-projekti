@@ -56,5 +56,44 @@ app.post('/api/notes', async (req, res) => {
     }
 });
 
+// API: Muokkaa olemassa olevaa muistiinpanoa
+app.put('/api/notes/:id', async (req, res) => {
+    try {
+        const { content } = req.body;
+
+        const result = await pool.query(
+            `UPDATE notes SET content = $1 WHERE id = $2 RETURNING *`,
+            [content, req.params.id]
+        );
+
+        // Jos rivin määrä on 0, id:llä ei ole vastaavaa muistiinpanoa
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Muistiinpanoa ei löytynyt' });
+        }
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error("Virhe muokkauksessa:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API: Poista muistiinpano
+app.delete('/api/notes/:id', async (req, res) => {
+    try {
+        const result = await pool.query('DELETE FROM notes WHERE id = $1 RETURNING id', [req.params.id]);
+
+        // Jos rivin määrä on 0, id:llä ei ole vastaavaa muistiinpanoa
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Muistiinpanoa ei löytynyt' });
+        }
+
+        res.json({ deleted: result.rows.length });
+    } catch (err) {
+        console.error("Virhe poistossa:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`API  ${PORT}`));

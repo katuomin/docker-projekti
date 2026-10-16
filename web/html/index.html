@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Docker & Mikropalvelut Opetusympäristö</title>
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background: #f4f4f9; color: #333; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background: #f4f4f9; color: #333; transition: padding-right 0.3s ease; }
         .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         h1, h2 { color: #2496ed; }
         pre { background: #2d3748; color: #fff; padding: 15px; border-radius: 5px; overflow-x: auto; }
@@ -16,9 +16,75 @@
         ul { list-style-type: none; padding: 0; }
         li { background: #eef6fc; margin: 8px 0; padding: 12px; border-left: 5px solid #2496ed; border-radius: 4px; word-wrap: break-word; }
         .error-msg { color: #dc3545; font-weight: bold; margin-bottom: 10px; }
+        .note-content { white-space: pre-wrap; }
+
+        #notesSidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.15);
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            transition: right 0.3s ease;
+            z-index: 90;
+        }
+        /* scuffed vetopalkki */
+        #sidebarToggle {
+            position: fixed;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 96px;
+            padding: 0;
+            border-radius: 8px 0 0 8px;
+            font-size: 16px;
+            z-index: 100;
+            transition: right 0.3s ease;
+        }
+        #sidebarToggle::before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 36px;
+            background: #2496ed;
+            border-radius: 6px 0 0 6px;
+            transition: background 0.3s ease;
+        }
+        #sidebarToggle:hover::before { background: #1d78c1; }
+        body.sidebar-open { padding-right: 360px; }
+        body.sidebar-open #notesSidebar { right: 0; }
+        body.sidebar-open #sidebarToggle { right: 300px; }
+        #notesSidebar h2 { margin-top: 0; font-size: 1.2em; }
+        #notesSidebar h3 { font-size: 1em; }
+        .sidebar-hint { font-size: 0.85em; color: #777; }
+        .note-actions { margin-top: 8px; display: flex; gap: 8px; }
+        .note-actions button { padding: 5px 10px; font-size: 0.85em; font-weight: normal; }
     </style>
 </head>
 <body>
+    <button id="sidebarToggle" onclick="toggleSidebar()" title="Vedä muistiinpanosivupalkki auki tai kiinni">📝</button>
+
+    <aside id="notesSidebar">
+        <h2>Omat muistiinpanot (Laajennusosa)</h2>
+        <p class="sidebar-hint">Tämä palkki kommunikoi <strong>notes-api</strong> -kontin kanssa (portti 3000). Lue, lisää ja muokkaa muistiinpanoja.</p>
+
+        <div id="statusMessage" class="error-msg"></div>
+
+        <textarea id="noteInput" placeholder="Kirjoita uusi muistiinpano tähän..."></textarea>
+        <button onclick="addNote()">Tallenna muistiinpano</button>
+
+        <h3>Tallennetut muistiinpanot:</h3>
+        <ul id="notesList"></ul>
+    </aside>
+
 <div class="container">
     <h1>Mitä on Docker ja Mikropalvelut?</h1>
     <p>Tämä sivu pyörii omassa <strong>Nginx-kontissaan</strong>. Se on osa mikropalveluympäristöä, jonka muut osat käsittelevät dataa taustalla.</p>
@@ -31,38 +97,42 @@
     <p>Kun sovellus koostuu useasta palvelusta, käytetään <strong>Docker Composea</strong>. Sen avulla koko mikropalveluympäristö käynnistetään yhdellä komennolla.</p>
     <pre>docker compose up --build -d</pre>
 
-    <!-- LAALENNUSOSA: MUISTIINPANOT -->
     <div class="note-section">
         <h2>Omat muistiinpanot (Laajennusosa)</h2>
-        <p>Tämä osio kommunikoi selainpohjaisesti <strong>notes-api</strong> -kontin kanssa (portti 3000), joka tallentaa datan tietokantaan.</p>
-        
-        <div id="statusMessage" class="error-msg"></div>
-
-        <textarea id="noteInput" placeholder="Kirjoita uusi muistiinpano tähän..."></textarea>
-        <button onclick="addNote()">Tallenna muistiinpano</button>
-        
-        <h3>Tallennetut muistiinpanot:</h3>
-        <ul id="notesList"></ul>
+        <p>Muistiinpanot löytyvät nyt sivupalkista — vedä se auki ruudun oikean reunan <strong>📝</strong> -korvasta. Sivupalkista voi lukea, lisätä, muokata ja poistaa muistiinpanoja, jotka tallentuvat <strong>notes-api</strong> -kontin (portti 3000) kautta tietokantaan.</p>
     </div>
 </div>
 
 <script>
-    // API:n osoite (paikallisessa testauksessa localhost:3000)
+    // api osoite
     const API_URL = 'http://localhost:3000/api/notes';
 
-    // 1. LUKEMINEN (Hae muistiinpanot API:sta)
+    // luodaan muistiinpanolista
+    let notes = [];
+
+    // palautetaan edellisen kerran tallennettu tila
+    if (localStorage.getItem('notesSidebarOpen') === 'true') {
+        document.body.classList.add('sidebar-open');
+    }
+
+    function toggleSidebar() {
+        const open = document.body.classList.toggle('sidebar-open');
+        localStorage.setItem('notesSidebarOpen', open ? 'true' : 'false');
+    }
+
+    // api luku
     async function fetchNotes() {
         const list = document.getElementById('notesList');
         const statusDiv = document.getElementById('statusMessage');
-        
+
         try {
             const res = await fetch(API_URL);
             if (!res.ok) throw new Error('Palvelinvirhe');
-            
-            const notes = await res.json();
-            statusDiv.textContent = ''; // Tyhjennetään mahdolliset virheet
+
+            notes = await res.json();
+            statusDiv.textContent = '';
             list.innerHTML = '';
-            
+
             if (notes.length === 0) {
                 list.innerHTML = '<li>Ei vielä muistiinpanoja. Kirjoita jotain yläpuolelle!</li>';
                 return;
@@ -70,22 +140,40 @@
 
             notes.forEach(n => {
                 const li = document.createElement('li');
-                li.textContent = n.content;
+                li.id = 'note-' + n.id;
+
+                const span = document.createElement('span');
+                span.className = 'note-content';
+                span.textContent = n.content;
+
+                const actions = document.createElement('div');
+                actions.className = 'note-actions';
+
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Muokkaa';
+                editBtn.onclick = () => startEdit(n.id);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Poista';
+                deleteBtn.onclick = () => deleteNote(n.id);
+
+                actions.append(editBtn, deleteBtn);
+                li.append(span, actions);
                 list.appendChild(li);
             });
-        } catch (err) { 
-            console.error('Virhe haettaessa muistiinpanoja:', err); 
+        } catch (err) {
+            console.error('Virhe haettaessa muistiinpanoja:', err);
             statusDiv.textContent = 'Yhteys API-konttiin epäonnistui. Varmista, että notes-api-kontti pyörii portissa 3000.';
         }
     }
 
-    // 2. KIRJOITTAMINEN (Lähetä uusi muistiinpano API:lle)
+    // api luonti
     async function addNote() {
         const input = document.getElementById('noteInput');
         const statusDiv = document.getElementById('statusMessage');
         const content = input.value.trim();
 
-        if (!content) return; // Älä lähetä tyhjää
+        if (!content) return;
 
         try {
         const res = await fetch(API_URL, {
@@ -94,23 +182,97 @@
             body: JSON.stringify({ content: content })
         });
 
-        // Jos status ei ole 2xx, heitetään virhe suoraan catch-lohkoon
         if (!res.ok) {
             const errorData = await res.json().catch(() => ({}));
             throw new Error(errorData.error || 'Palvelinvirhe statuksella ' + res.status);
         }
 
-        input.value = ''; 
+        input.value = '';
         statusDiv.textContent = '';
-        fetchNotes(); // Haetaan päivittynyt lista
-    } catch (err) { 
-        console.error('Virhe tallennettaessa:', err); 
+        fetchNotes();
+    } catch (err) {
+        console.error('Virhe tallennettaessa:', err);
         statusDiv.textContent = 'Virhe tallennettaessa: ' + err.message;
     }
 
     }
 
-    // Haetaan muistiinpanot automaattisesti kun sivu avataan
+    // api muokkaus
+    function startEdit(id) {
+        const note = notes.find(n => n.id === id);
+        const li = document.getElementById('note-' + id);
+        if (!note || !li) return;
+
+        li.innerHTML = '';
+
+        const ta = document.createElement('textarea');
+        ta.value = note.content;
+        ta.style.height = '100px';
+
+        const actions = document.createElement('div');
+        actions.className = 'note-actions';
+
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = 'Tallenna';
+        saveBtn.onclick = () => saveEdit(id, ta.value);
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Peruuta';
+        cancelBtn.onclick = () => fetchNotes();
+
+        actions.append(saveBtn, cancelBtn);
+        li.append(ta, actions);
+    }
+
+    // api tallennus
+    async function saveEdit(id, content) {
+        content = content.trim();
+        if (!content) return;
+
+        const statusDiv = document.getElementById('statusMessage');
+        try {
+            const res = await fetch(API_URL + '/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: content })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Palvelinvirhe statuksella ' + res.status);
+            }
+
+            statusDiv.textContent = '';
+            fetchNotes();
+        } catch (err) {
+            console.error('Virhe muokattaessa:', err);
+            statusDiv.textContent = 'Virhe muokattaessa: ' + err.message;
+        }
+    }
+
+    // api poisto
+    async function deleteNote(id) {
+        if (!confirm('Poistetaanko muistiinpano?')) return;
+
+        const statusDiv = document.getElementById('statusMessage');
+        try {
+            const res = await fetch(API_URL + '/' + id, {
+                method: 'DELETE'
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Palvelinvirhe statuksella ' + res.status);
+            }
+
+            statusDiv.textContent = '';
+            fetchNotes();
+        } catch (err) {
+            console.error('Virhe poistettaessa:', err);
+            statusDiv.textContent = 'Virhe poistettaessa: ' + err.message;
+        }
+    }
+
     fetchNotes();
 </script>
 </body>
