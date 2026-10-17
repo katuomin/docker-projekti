@@ -14,6 +14,37 @@
   <main>
     <h1>Terraform AWS -ympäristön määrittely ja hallinta</h1>
     <p>Tässä osiossa käydään läpi, kuinka voit määritellä ja hallita AWS-ympäristöä Terraformin avulla.</p>
+    <h2>Tiedostot</h2>
+    <ul>
+      <li><code>main.tf</code> – pääasiallinen Terraform-konfiguraatiotiedosto.</li>
+      <li><code>variables.tf</code> – muuttujien määrittelyt.</li>
+      <li><code>outputs.tf</code> – ulostulot, joita Terraform näyttää ajon jälkeen.</li>
+      <li><code>versions.tf</code> – määrittelee Terraformin ja providerien versiot.</li>
+      <li><code>README.md</code> – dokumentaatio projektista.</li>
+      <li><code>user-data.tf</code> – käyttäjädata EC2-instansseille.</li>
+      <li><code>terraform.tfvars</code> – tiedosto, jossa määritellään muuttujien arvot.</li>
+      <li><code>.gitignore</code> – tiedosto, joka määrittelee, mitkä tiedostot Gitin tulee jättää huomiotta (esim. Terraformin tila).</li>
+      <li><code>terraform.tfstate</code> – Terraformin tila, joka tallentaa resurssien nykyisen tilan.</li>
+      <li><code>terraform.tfstate.backup</code> – Varmuuskopio edellisestä tilasta.</li>
+      <li><code>terraform.lock.hcl</code> – lukitsee providerien versiot, jotta ympäristö pysyy ennustettavana.</li>
+      <li><code>backend.tf</code> – määrittelee Terraformin backendin, esimerkiksi S3:n tilan tallentamiseen.</li>
+      <li><code>provider.tf</code> – määrittelee käytettävät Terraform-providerit, kuten AWS-providerin.</li>
+      <li><code>modules/</code> – hakemisto, jossa sijaitsevat uudelleenkäytettävät Terraform-moduulit.</li>
+      <li><code>scripts/</code> – hakemisto, jossa sijaitsevat apuskriptit, kuten alustusskriptit tai muut automatisointityökalut.</li>
+      <li><code>docs/</code> – hakemisto, jossa sijaitsevat projektin dokumentaatiotiedostot.</li>
+      <li><code>tests/</code> – hakemisto, jossa sijaitsevat testit Terraform-konfiguraatioille.</li>
+
+    </ul>
+    <h2>Käyttöönotto</h2>
+    <p>Terraformin käyttöönotto tapahtuu seuraavasti:</p>
+    <ol>
+      <li>Alusta Terraform-työtila: <code>terraform init</code></li>
+      <li>Tarkista suunnitellut muutokset: <code>terraform plan</code></li>
+      <li>Ota muutokset käyttöön: <code>terraform apply</code></li>
+    </ol>
+    <p>Kun muutokset on otettu käyttöön, Terraform päivittää AWS-ympäristön määrittelyjesi mukaisesti.</p>
+    <h2>Huomioitavaa</h2>
+    <p>Muista, että Terraformin tila tallennetaan paikallisesti tiedostoon <code>terraform.tfstate</code>. Tämä tiedosto sisältää tietoa kaikista hallinnoimistasi resursseista, joten sitä ei tulisi muokata käsin. Lisäksi on suositeltavaa lisätä se <code>.gitignore</code>-tiedostoon, jotta se ei päädy versionhallintaan.</p>
   </main>
   <footer><p>footer</p></footer>
   <script src="js/notes.js"></script>
