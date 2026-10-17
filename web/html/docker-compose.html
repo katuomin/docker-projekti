@@ -119,10 +119,14 @@ location /api/ {
     <pre><code>depends_on:
   database:
     condition: service_healthy</code></pre>
-    <p>Tietokannan tarkistus käyttää <code>pg_isready</code>-komentoa. Web-palvelun tarkistus hakee nginxin etusivun <code>wget</code>-komennolla. API:n nykyinen healthcheck käyttää Pythonia:</p>
-    <pre><code>test: ["CMD", "python", "-c",
-  "import urllib.request as u; u.urlopen('http://127.0.0.1:3000/health')"]</code></pre>
-    <p>Huomio: <code>notes-api/Dockerfile</code> perustuu <code>node:22-alpine</code>-imageen eikä asenna Pythonia. Lisäksi nykyinen <code>server.js</code> ei määrittele <code>/health</code>-reittiä. Tämän vuoksi API:n healthcheck kannattaa korjata ennen kuin sen varaan rakennetaan käynnistyslogiikka, esimerkiksi lisäämällä sovellukseen kevyt health-reitti ja käyttämällä tarkistukseen imagessa varmasti olevaa työkalua. Nykyisessä tiedostossa proxy ei kuitenkaan riipu API:n healthcheckistä, joten sivu voi silti palvella staattista sisältöä.</p>
+    <p>Tietokannan tarkistus käyttää <code>pg_isready</code>-komentoa. Web-palvelun ja API:n tarkistukset käyttävät <code>wget</code>-komentoa, joka kuuluu näiden Alpine-pohjaisten nginx- ja Node-imagejen mukana. API:n healthcheck hakee sovelluksen <code>/health</code>-reitin:</p>
+    <pre><code>healthcheck:
+  test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+  interval: 10s
+  timeout: 3s
+  retries: 3
+  start_period: 5s</code></pre>
+    <p>API:n <code>server.js</code> määrittelee <code>/health</code>-reitin, joka vastaa onnistuneessa tilanteessa JSON-muodossa. <code>wget</code> palauttaa onnistuneen poistumiskoodin, kun reitti vastaa, joten Compose voi merkitä API-kontin terveeksi. API:n healthcheck kertoo API:n tilan, mutta nykyisessä tiedostossa proxy ei riipu suoraan API:n healthcheckistä; proxyn käynnistyminen odottaa vain <code>web</code>-palvelun olevan terve.</p>
 
     <h2>9. Hyödylliset ylläpitokomennot</h2>
     <pre><code># Käynnistä uudelleen ilman uutta buildia
