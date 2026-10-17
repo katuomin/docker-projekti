@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Least privilege by default; individual jobs raise this only when needed.
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    environment: ci
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: python -m pip install --upgrade pip ruff
+
+      - name: Run ruff
+        run: ruff check healthcheck tests
+
+  test:
+    name: Test (pytest)
+    runs-on: ubuntu-latest
+    environment: ci
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package and test dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -e . pytest
+
+      - name: Run pytest
+        run: pytest -v
+
+  package:
+    name: Package (build + artifact)
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    environment: ci
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build sdist and wheel
+        run: python -m pip install --upgrade pip build && python -m build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: healthcheck-${{ github.sha }}
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+  # Keyless deploy: only runs on v* tags. The job presents a short-lived
+  # OIDC token (id-token: write) and assumes an IAM role, so no long-lived
+  # credentials are stored anywhere. The role ARN comes from the repo
+  # variable DEPLOY_ROLE_ARN.
+  deploy:
+    name: Deploy (OIDC, keyless)
+    needs: [lint, test, package]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Assume IAM role with the OIDC token
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.DEPLOY_ROLE_ARN }}
+          audience: sts.amazonaws.com
