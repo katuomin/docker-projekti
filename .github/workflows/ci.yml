@@ -2,29 +2,13 @@ name: CI
 
 on:
   push:
-    paths:
-      - "healthcheck/**"
-      - "tests/**"
-      - "pyproject.toml"
-      - "docker-compose.yaml"
-      - "notes-api/**"
-      - "web/**"
-      - "proxy/**"
-      - "db/**"
-      - "terraformlearnerlab/**"
-      - ".github/workflows/ci.yml"
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
   pull_request:
-    paths:
-      - "healthcheck/**"
-      - "tests/**"
-      - "pyproject.toml"
-      - "docker-compose.yaml"
-      - "notes-api/**"
-      - "web/**"
-      - "proxy/**"
-      - "db/**"
-      - "terraformlearnerlab/**"
-      - ".github/workflows/ci.yml"
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
 
 # Least privilege by default; individual jobs raise this only when needed.
 permissions:
