@@ -1,0 +1,7 @@
+# Generated Terraform data and state may contain infrastructure details or secrets.
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+crash.log
+crash.*.log
