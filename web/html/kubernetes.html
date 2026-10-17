@@ -3,18 +3,120 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Composesta Kubernetesiin</title>
+  <title>Kuberneteksen perusteet</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <header>
-    <h1>Composesta Kubernetesiin</h1>
-    <p><a href="index.html">< Takaisin etusivulle</a></p>
+    <h1>Kuberneteksen perusteet</h1>
+    <p><a href="index.html">&lt; Takaisin etusivulle</a></p>
   </header>
   <main>
-    <p>kubernetes kontsaa</p>
+    <h2>1. Mikä Kubernetes (K8s) on?</h2>
+    <p><strong>Kubernetes</strong> (tunnetaan myös lyhenteellä <strong>K8s</strong>) on avoimen lähdekoodin järjestelmä kontitettujen sovellusten automaattiseen käyttöönottoon, skaalaukseen ja hallintaan (konttiorkestraatio).</p>
+    <p>Kun sovelluksia ajetaan useissa konteissa useilla eri palvelimilla, manuaalinen hallinta käy nopeasti mahdottomaksi. Kubernetes huolehtii automaattisesti konttien sijoittelusta, uudelleenkäynnistyksistä vikatilanteissa sekä liikenteen ohjauksesta.</p>
+
+    <h2>2. Klusterin perusarkkitehtuuri</h2>
+    <p>Kubernetes-klusteri koostuu kahdesta pääosasta: <strong>Control Planesta</strong> (ohjaustaso) ja <strong>Worker Nodeista</strong> (työsolmut).</p>
+    <ul>
+      <li><strong>Control Plane:</strong> Hallitsee klusterin tilaa. Se sisältää komponentit kuten <code>kube-apiserver</code> (rajapinta kaikille komennoille), <code>etcd</code> (klusterin hajautettu tietokanta) ja <code>kube-scheduler</code> (päättää millä nodella kukin pod ajetaan).</li>
+      <li><strong>Worker Node:</strong> Palvelin (fyysinen tai virtuaalikone), jossa itse sovelluskontit ajetaan. Nodella toimii <code>kubelet</code> (agentti, joka kommunikoi apiserverin kanssa) sekä <code>kube-proxy</code> (verkkoliikenteen reititys).</li>
+    </ul>
+
+    <h2>3. Pod – Pienin ajettava yksikkö</h2>
+    <p>Kubernetes ei aja kontteja suoraan, vaan käärii ne <strong>Podiin</strong>. Pod edustaa yhtä sovellusprosessin instanssia ja se voi sisältää yhden tai useamman toisiinsa tiukasti liittyvän kontin, jotka jakavat saman verkko-IP:n ja tallennustilan.</p>
+    <pre><code>apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: web
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.25
+      ports:
+        - containerPort: 80</code></pre>
+    <p>Podit ovat luonteeltaan väliaikaisia: jos pod tuhoutuu tai node kaatuu, pod ei palaa takaisin samana, vaan tilalle luodaan uusi.</p>
+
+    <h2>4. Deployment – Hallintaa ja itseparantuvuutta</h2>
+    <p>Käytännössä podeja ei juuri koskaan luoda suoraan, vaan niiden elinkaarta ohjataan <strong>Deployment</strong>-resurssilla. Deployment määrittelee halutun tilan (esim. montako kopiota podista halutaan ajaa) ja huolehtii automaattisesti päivityksistä ilman käyttökatkoa (rolling updates).</p>
+    <pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-api-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: notes-api
+  template:
+    metadata:
+      labels:
+        app: notes-api
+    spec:
+      containers:
+        - name: notes-api
+          image: notes-api:latest
+          ports:
+            - containerPort: 3000</code></pre>
+    <p>Jos yksi podeista kaatuu, Deploymentin alla oleva <strong>ReplicaSet</strong> luo automaattisesti uuden tilalle, jotta haluttu määrä (<code>replicas: 3</code>) säilyy.</p>
+
+    <h2>5. Service – Liikenteen reititys podeille</h2>
+    <p>Koska podit saavat dynaamiset IP-osoitteet, jotka muuttuvat niiden käynnistyessä uudelleen, tarvitaan <strong>Service</strong>. Service toimii kiinteänä osoitteena ja kuormantasaajana pod-joukolle.</p>
+    <ul>
+      <li><code>ClusterIP</code>: Oletustyyppi. Palvelu näkyy vain klusterin sisäverkossa.</li>
+      <li><code>NodePort</code>: Avaa saman portin kaikille klusterin nodeille, jolloin palveluun pääsee käsiksi ulkopuolelta noden IP-osoitteella.</li>
+      <li><code>LoadBalancer</code>: Pyytää pilvipalvelulta (AWS, Azure, GCP) ulkoisen kuormantasaajan ja julkisen IP-osoitteen.</li>
+    </ul>
+    <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: notes-api-service
+spec:
+  type: ClusterIP
+  selector:
+    app: notes-api
+  ports:
+    - port: 80
+      targetPort: 3000</code></pre>
+
+    <h2>6. ConfigMap ja Secret – Asetusten eriyttäminen</h2>
+    <p>Sovelluksen asetukset ja salaisuudet pidetään erillään kontti-imageista käyttämällä <strong>ConfigMap</strong>- ja <strong>Secret</strong>-resursseja.</p>
+    <p>Esimerkki konfiguraatiosta (ConfigMap):</p>
+    <pre><code>apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  APP_ENV: "production"
+  PORT: "3000"</code></pre>
+    <p>Nämä voidaan injektoida podeille ympäristömuuttujina (<code>env</code>) tai liittää tiedostoina tiedostojärjestelmään (<code>volumes</code>). Secret-resurssi toimii samalla tavalla, mutta tiedot ovat oletuksena Base64-enkoodattuja ja pääsyä niihin voi rajoittaa tarkemmin.</p>
+
+    <h2>7. PersistentVolume – Pysyvä tallennustila</h2>
+    <p>Kontin paikallinen tiedostojärjestelmä tyhjenee, kun kontti käynnistyy uudelleen. Pysyvää dataa (kuten tietokannat) varten käytetään abstraktioita:</p>
+    <ul>
+      <li><strong>PersistentVolume (PV):</strong> Klusterin ylläpitäjän tai pilvipalvelun varaama fyysinen levyresurssi.</li>
+      <li><strong>PersistentVolumeClaim (PVC):</strong> Podin tekemä "pyyntö" tietyn kokoiselle tallennustilalle, joka liitetään automaattisesti vapaana olevaan PV-resurssiin.</li>
+    </ul>
+
+    <h2>8. Tärkeimmät kubectl-komennot</h2>
+    <p>Klusteria hallitaan komentoriviltä <code>kubectl</code>-työkalulla, joka kommunikoi Control Planen API-palvelimen kanssa.</p>
+    <pre><code># Sovella YAML-manifestit klusteriin
+kubectl apply -f deployment.yaml
+
+# Tarkastele klusterin resursseja
+kubectl get pods
+kubectl get services
+kubectl get nodes
+
+# Lue podin tiedot ja tapahtumaloki (virheenkorjaus)
+kubectl describe pod &lt;podin-nimi&gt;
+kubectl logs &lt;podin-nimi&gt;
+
+# Poista resurssi
+kubectl delete -f deployment.yaml</code></pre>
+    <p>Yleisin käytäntö on hallita määrityksiä versionhallinnassa (Git) deklaratiivisesti ja ajaa ne klusteriin <code>kubectl apply</code> -komennolla tai automatisoidulla GitOps-työkalulla.</p>
   </main>
-  <footer><p>footer</p></footer>
-  <script src="js/notes.js"></script>
 </body>
 </html>
