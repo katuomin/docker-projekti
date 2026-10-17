@@ -62,11 +62,11 @@ resource "aws_security_group" "instance" {
 
 # Cloud-init installs Docker, clones the repo and runs the existing Compose file.
 resource "aws_instance" "example" {
-  ami                         = data.aws_ami.ubuntu.id
-  instance_type               = var.instance_type
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = var.instance_type
   # No subnet_id: AWS picks a default subnet in an AZ that supports the
   # instance type (fixes "not supported in us-east-1e").
-  vpc_security_group_ids       = [aws_security_group.instance.id]
+  vpc_security_group_ids      = [aws_security_group.instance.id]
   associate_public_ip_address = true
 
   # Empty string becomes null so the attribute is simply omitted.
