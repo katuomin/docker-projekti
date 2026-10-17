@@ -5,6 +5,7 @@ set -euxo pipefail
 exec > >(tee -a /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
 
 sudo apt update && sudo apt upgrade -y
+sudo apt install -y ca-certificates curl git
 curl -fsSL https://get.docker.com/ -o install-docker.sh
 sudo sh install-docker.sh
 systemctl enable --now docker
