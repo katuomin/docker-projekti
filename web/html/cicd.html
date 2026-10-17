@@ -12,9 +12,124 @@
     <p><a href="index.html">< Takaisin etusivulle</a></p>
   </header>
   <main>
-    <p>kontsaa</p>
+    <h2>1. Mitä CI/CD tarkoittaa?</h2>
+    <p><strong>CI</strong> eli Continuous Integration tarkoittaa, että koodimuutokset tarkistetaan automaattisesti aina, kun ne pushataan repositoryyn tai niistä tehdään pull request. <strong>CD</strong> eli Continuous Delivery tai Deployment tarkoittaa, että hyväksytty muutos voidaan paketoida ja julkaista hallitusti.</p>
+    <p>Tässä projektissa CI/CD toteutetaan GitHub Actionsilla. Workflow-tiedosto on <code>.github/workflows/ci.yml</code>, ja se tarkistaa Python-koodin, testit, Compose-määrityksen, Node.js-sovelluksen, Docker-imaget sekä Terraform-tiedostot.</p>
+
+    <h2>2. Milloin pipeline käynnistyy?</h2>
+    <p>Workflow käynnistyy <code>push</code>- ja <code>pull_request</code>-tapahtumista. Lisäksi workflow tarkkailee vain projektin kannalta olennaisia polkuja, kuten <code>healthcheck/</code>, <code>tests/</code>, <code>notes-api/</code>, <code>web/</code>, <code>proxy/</code>, <code>docker-compose.yaml</code> ja <code>terraformlearnerlab/</code>.</p>
+    <pre><code>on:
+  push:
+    paths:
+      - "notes-api/**"
+      - "web/**"
+      - "docker-compose.yaml"
+  pull_request:
+    paths:
+      - "notes-api/**"
+      - "web/**"
+      - "docker-compose.yaml"</code></pre>
+    <p>Path-suodatus vähentää turhia ajoja: workflow ei käynnisty muutoksista, jotka eivät vaikuta tarkistettaviin osiin.</p>
+
+    <h2>3. Lint ja Python-testit</h2>
+    <p><code>lint</code>-job asentaa Python 3.12:n ja suorittaa Ruff-tarkistuksen:</p>
+    <pre><code>ruff check healthcheck tests</code></pre>
+    <p>Lint tarkistaa Python-koodin tyylin ja yleisiä ohjelmointivirheitä ilman, että sovellusta tarvitsee käynnistää.</p>
+    <p><code>test</code>-job asentaa projektin ja testiriippuvuudet ja suorittaa yksikkötestit:</p>
+    <pre><code>python -m pip install --upgrade pip
+python -m pip install -e . pytest
+pytest -v</code></pre>
+    <p>Testit sijaitsevat <code>tests/</code>-kansiossa ja testaavat <code>healthcheck</code>-paketin toimintaa, mukaan lukien raja-arvotapauksia.</p>
+
+    <h2>4. Python-paketin rakentaminen</h2>
+    <p><code>package</code>-job käynnistyy vasta, kun sekä lint että testit ovat onnistuneet:</p>
+    <pre><code>needs: [lint, test]</code></pre>
+    <p>Job rakentaa lähdejakelun ja wheel-paketin:</p>
+    <pre><code>python -m pip install --upgrade pip build
+python -m build</code></pre>
+    <p>Rakennetut <code>dist/*.whl</code>- ja <code>dist/*.tar.gz</code>-tiedostot tallennetaan GitHub Actionsin artefaktiksi nimellä <code>healthcheck-&lt;commit-sha&gt;</code>. Artefakti säilytetään 14 päivää.</p>
+
+    <h2>5. Compose-pinon ja Node.js:n tarkistukset</h2>
+    <p><code>stack</code>-job tarkistaa, että projektin Compose-määritys on kelvollinen:</p>
+    <pre><code>docker compose config -q</code></pre>
+    <p>Komento validoi <code>docker-compose.yaml</code>-tiedoston ilman, että koko pinoa tarvitsee käynnistää.</p>
+    <p>Samassa jobissa tarkistetaan API:n JavaScript-syntaksi ja riippuvuudet:</p>
+    <pre><code>node --check notes-api/server.js
+
+cd notes-api
+npm install --no-audit --no-fund</code></pre>
+    <p>Näin CI havaitsee syntaksivirheet ja riippuvuuksien asennusongelmat ennen kuin sovellusta yritetään ajaa Dockerissa.</p>
+
+    <h2>6. Docker-imagien rakentaminen</h2>
+    <p><code>images</code>-job rakentaa projektin omat imaget:</p>
+    <pre><code>docker build -t web-ci ./web
+docker build -t notes-api-ci ./notes-api</code></pre>
+    <p>Tämä tarkistaa, että [web/Dockerfile](/home/aleks/docker-rojekti/web/Dockerfile) ja [notes-api/Dockerfile](/home/aleks/docker-rojekti/notes-api/Dockerfile) toimivat CI-ympäristössä ja että niiden tarvitsemat tiedostot löytyvät. Imaget rakennetaan validointia varten, eikä niitä tässä jobissa julkaista Docker Hubiin.</p>
+
+    <h2>7. Terraformin validointi</h2>
+    <p><code>terraform</code>-job tarkistaa <code>terraformlearnerlab/</code>-kansion:</p>
+    <pre><code>terraform fmt -check -recursive
+terraform init -backend=false
+terraform validate</code></pre>
+    <ul>
+      <li><code>terraform fmt -check -recursive</code> tarkistaa tiedostojen muotoilun.</li>
+      <li><code>terraform init -backend=false</code> alustaa Terraformin ilman etäistä backendia.</li>
+      <li><code>terraform validate</code> tarkistaa määritysten rakenteen ja syntaksin.</li>
+    </ul>
+    <p>Validointi ei vielä luo AWS-resursseja.</p>
+
+    <h2>8. Jobien riippuvuudet</h2>
+    <p>Putken jobit on ketjutettu niin, että seuraava vaihe käyttää vain onnistuneen edellisen vaiheen tulosta:</p>
+    <pre><code>package  &lt;- lint, test
+deploy   &lt;- lint, test, package, stack, images, terraform</code></pre>
+    <p>Deploy ei siis voi edetä, jos esimerkiksi testit epäonnistuvat, Compose-tiedosto ei ole kelvollinen, Docker-image ei rakennu tai Terraformin validointi epäonnistuu.</p>
+
+    <h2>9. Deploy vain version tageilla</h2>
+    <p><code>deploy</code>-jobin ehto on:</p>
+    <pre><code>if: startsWith(github.ref, 'refs/tags/v')</code></pre>
+    <p>Deploy käynnistyy vain version tageilla, kuten:</p>
+    <pre><code>v1.0.0
+v1.2.3</code></pre>
+    <p>Tavallinen push tai pull request suorittaa tarkistukset, mutta ei deployta tuotantoon.</p>
+
+    <h2>10. AWS OIDC ja vähimmät oikeudet</h2>
+    <p>Deploy käyttää GitHub Actionsin OIDC-tunnistautumista AWS:n IAM-roolin ottamiseen. Pitkäkestoisia AWS-avaimia ei tallenneta repositoryyn:</p>
+    <pre><code>permissions:
+  id-token: write
+  contents: read
+
+role-to-assume: ${{ vars.DEPLOY_ROLE_ARN }}</code></pre>
+    <p>Workflowlla on oletuksena vain <code>contents: read</code> -oikeus. Deploy-job saa lisäksi <code>id-token: write</code> -oikeuden, koska se tarvitsee sitä lyhytkestoisen OIDC-tokenin luomiseen. IAM-roolin ARN luetaan repositoryn muuttujasta <code>DEPLOY_ROLE_ARN</code>.</p>
+
+    <h2>11. Samat tarkistukset paikallisesti</h2>
+    <p>Virheet kannattaa löytää jo ennen pushia. Keskeiset CI-komennot voi ajaa omalla koneella:</p>
+    <pre><code>ruff check healthcheck tests
+pytest -v
+python -m build
+
+docker compose config -q
+node --check notes-api/server.js
+docker build -t web-ci ./web
+docker build -t notes-api-ci ./notes-api
+
+cd terraformlearnerlab
+terraform fmt -check -recursive
+terraform init -backend=false
+terraform validate</code></pre>
+
+    <h2>12. Tiivistelmä</h2>
+    <ul>
+      <li>GitHub Actions käynnistyy push- ja pull request -tapahtumista.</li>
+      <li>Ruff tarkistaa Python-koodin ja pytest suorittaa yksikkötestit.</li>
+      <li>Python-paketti rakennetaan ja tallennetaan artefaktiksi.</li>
+      <li>Compose-tiedosto, Node.js-syntaksi ja npm-riippuvuudet tarkistetaan.</li>
+      <li><code>web</code>- ja <code>notes-api</code>-imaget rakennetaan CI:ssä.</li>
+      <li>Terraform-määritykset formatoidaan ja validoidaan.</li>
+      <li>Deploy odottaa kaikkien validointien onnistumista ja tapahtuu vain <code>v*</code>-tageilla.</li>
+      <li>AWS-yhteys muodostetaan avaimettomasti OIDC:n avulla.</li>
+    </ul>
   </main>
-  <footer><p>footer</p></footer>
+  <footer><p>CI/CD GitHub Actionsilla – esimerkit tästä repositorysta</p></footer>
   <script src="js/notes.js"></script>
 </body>
 </html>
