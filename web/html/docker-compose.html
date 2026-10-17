@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Docker Compose</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Docker Compose</h1>
+    <p><a href="index.html">< Takaisin etusivulle</a></p>
+  </header>
+  <main>
+    <h2>2. Docker Compose</h2>
+    <p>Kun sovellus koostuu useasta palvelusta, käytetään <strong>Docker Composea</strong>. Sen avulla koko mikropalveluympäristö käynnistetään yhdellä komennolla.</p>
+    <pre><code>docker compose up --build -d</code></pre>
+
+    <h2>Tämän projektin compose-tiedosto</h2>
+    <p>Projekti koostuu viidestä palvelusta: <code>web</code> (nginx), <code>proxy</code> (nginx-reititys), <code>notes-api</code> (Node/Express), <code>database</code> (PostgreSQL) sekä nimenvolyymi <code>pgdata</code>. Palvelut on jaettu kahteen verkkoon: <code>frontend-network</code> ja <code>backend-network</code> (internal), jolloin tietokantaan ei pääse ulkopuolelta.</p>
+    <p><code>depends_on</code> ja <code>healthcheck</code> varmistavat, että palvelut käynnistyvät oikeassa järjestyksessä.</p>
+  </main>
+  <footer><p>footer</p></footer>
+  <script src="js/notes.js"></script>
+</body>
+</html>

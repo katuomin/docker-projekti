@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dockerin perusteet</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Dockerin perusteet</h1>
+    <p><a href="index.html">< Takaisin etusivulle</a></p>
+  </header>
+  <main>
+    <h2>1. Docker ja Kontitus</h2>
+    <p>Docker mahdollistaa sovellusten ja niiden riippuvuuksien sulkemisen standardoituun pakettiin eli <em>konttiin</em>.</p>
+    <pre><code>docker run -d -p 80:80 nginx</code></pre>
+
+    <h2>Imaget, kontit ja kerrokset</h2>
+    <p>Image on kontin malli, ja kontti on sen käynnistetty instanssi. Image rakentuu kerroksina: jokainen Dockerfile-komento luo oman kerroksensa, jotka jaetaan kaikkien saman imagen perusteella pyörivien konttien kesken.</p>
+    <p>Tämän projektin web-kontti perustuu <code>nginx:alpine</code>-imageen, joka on kevyt Linux-jakelu nginx-palvelimen kera.</p>
+  </main>
+  <footer><p>footer>/p></footer>
+  <script src="js/notes.js"></script>
+</body>
+</html>
