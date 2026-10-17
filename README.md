@@ -1,7 +1,7 @@
-# Docker project
+# Projekti: Docker kurssin yhteenveto
 
-This repository contains a Docker Compose notes application with a web
-container, nginx proxy, Node.js API, and PostgreSQL database.
+Tämä repository sisältää Docker Compose muistiinpanosovelluksen,
+jossa on webserver (nginx), proxy (nginx), Node.js API ja PostgreSQL tietokanta.
 
-For an AWS example that uses Terraform to provision one EC2 instance and run
-this same Compose stack, see [terraformexample/README.md](terraformexample/README.md).
+Esimerkki kuinka suorittaa tämä rakenne AWS-pilvessä, jonka ympäristö
+on määritelty Terraformin avulla, katso [terraformlearnerlab/README.md](terraformlearnerlab/README.md).
