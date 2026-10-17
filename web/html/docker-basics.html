@@ -12,15 +12,62 @@
     <p><a href="index.html">< Takaisin etusivulle</a></p>
   </header>
   <main>
-    <h2>1. Docker ja Kontitus</h2>
-    <p>Docker mahdollistaa sovellusten ja niiden riippuvuuksien sulkemisen standardoituun pakettiin eli <em>konttiin</em>.</p>
-    <pre><code>docker run -d -p 80:80 nginx</code></pre>
+    <h2>1. Mikä Docker on?</h2>
+    <p>Docker pakkaa sovelluksen ja sen tarvitsemat tiedostot samaan helposti siirrettävään kokonaisuuteen. Tätä kokonaisuutta kutsutaan <strong>kontiksi</strong>. Kontti käyttää isäntäkoneen käyttöjärjestelmän ydintä, mutta sen prosessit ja tiedostot pysyvät erillään muista sovelluksista.</p>
+    <p>Ajattele asiaa näin: <strong>image</strong> on valmis resepti tai muotti, ja <strong>kontti</strong> on siitä käynnistetty sovellus. Samasta imagesta voi käynnistää useita kontteja.</p>
 
-    <h2>Imaget, kontit ja kerrokset</h2>
-    <p>Image on kontin malli, ja kontti on sen käynnistetty instanssi. Image rakentuu kerroksina: jokainen Dockerfile-komento luo oman kerroksensa, jotka jaetaan kaikkien saman imagen perusteella pyörivien konttien kesken.</p>
-    <p>Tämän projektin web-kontti perustuu <code>nginx:alpine</code>-imageen, joka on kevyt Linux-jakelu nginx-palvelimen kera.</p>
+    <h2>2. Image, kontti ja Dockerfile</h2>
+    <p><strong>Image</strong> sisältää sovelluksen suorittamiseen tarvittavat tiedostot. <strong>Dockerfile</strong> kertoo, miten image rakennetaan. Kun image käynnistetään, syntyy kontti.</p>
+    <p>Tämän repositoryn web-palvelun Dockerfile on hyvin pieni:</p>
+    <pre><code>FROM nginx:alpine
+COPY html/ /usr/share/nginx/html/</code></pre>
+    <ul>
+      <li><code>FROM</code> valitsee pohjaksi kevyen nginx-imagen.</li>
+      <li><code>COPY</code> siirtää tämän projektin <code>web/html/</code>-kansion nginxin tarjoiltavaksi.</li>
+    </ul>
+    <p>Myös muistiinpanojen API rakennetaan omasta Dockerfilesta. Se käyttää Node.js:n Alpine-imagea, asentaa <code>package.json</code>-tiedoston riippuvuudet ja käynnistää <code>server.js</code>-tiedoston. Näin sama perusidea toimii eri sovelluksille.</p>
+
+    <h2>3. Imagen rakentaminen ja kontin käynnistäminen</h2>
+    <p>Kun komento suoritetaan tämän repositoryn juurikansiosta, web-palvelun imagen voi rakentaa ja käynnistää näin:</p>
+    <pre><code>docker build -t docker-rojekti-web ./web
+docker run --rm -p 8080:80 docker-rojekti-web</code></pre>
+    <p>Komento on tässä repositoriossa oikein: <code>./web</code> on rakennuskonteksti, ja sen sisältä löytyy <code>Dockerfile</code> sekä <code>html/</code>-kansio. Siksi Docker löytää sekä Dockerfilen että sen <code>COPY html/</code> -komennon tarvitsemat tiedostot.</p>
+    <p>Jos olet jo <code>web</code>-kansiossa, vastaava komento on <code>docker build -t docker-rojekti-web .</code>. Piste tarkoittaa nykyistä kansiota.</p>
+    <p><code>-t</code> antaa imagelle nimen. <code>docker run</code> käynnistää imagesta kontin, <code>--rm</code> poistaa kontin pysäyttämisen jälkeen ja <code>-p 8080:80</code> yhdistää oman koneen portin 8080 kontin nginx-porttiin 80. Tämän jälkeen sivu avautuu osoitteessa <a href="http://localhost:8080">http://localhost:8080</a>.</p>
+
+    <h2>4. Kontin elinkaari</h2>
+    <pre><code># Käynnistä web-kontti
+docker run --name web-kontti -p 8080:80 docker-rojekti-web
+
+# Näytä käynnissä olevat kontit
+docker ps
+
+# Näytä myös pysähtyneet kontit
+docker ps -a
+
+# Näytä kontin lokit
+docker logs web-kontti
+
+# Pysäytä kontti
+docker stop web-kontti
+
+# Poista pysäytetty kontti
+docker rm web-kontti</code></pre>
+    <p>Image ja kontti ovat eri asioita: kontin voi poistaa ilman että image poistuu. Imagen voi tarkistaa komennolla <code>docker image ls</code> ja poistaa tarvittaessa komennolla <code>docker image rm docker-rojekti-web</code>.</p>
+
+    <h2>5. Mitä kontissa tapahtuu?</h2>
+    <p>Kontti suorittaa yhden pääprosessin. Tässä esimerkissä nginx-palvelin tarjoaa <code>html/</code>-kansion tiedostoja. Kun nginx-prosessi päättyy, kontti pysähtyy. Kontin voi käynnistää uudelleen komennolla <code>docker start web-kontti</code>.</p>
+    <p>Kontti ei ole sama asia kuin virtuaalikone. Kontti on yleensä kevyempi ja käynnistyy nopeasti, koska se käyttää isäntäkoneen Docker-ympäristöä eikä sisällä kokonaista omaa käyttöjärjestelmää.</p>
+
+    <h2>6. Tiivistelmä</h2>
+    <ul>
+      <li>Dockerfile kertoo, miten image rakennetaan.</li>
+      <li>Image on sovelluksen valmis paketti.</li>
+      <li>Kontti on imagesta käynnistetty suoritettava instanssi.</li>
+      <li><code>docker build</code> rakentaa imagen ja <code>docker run</code> käynnistää kontin.</li>
+    </ul>
   </main>
-  <footer><p>footer>/p></footer>
+  <footer><p>Dockerin perusteet – esimerkit tästä repositorysta</p></footer>
   <script src="js/notes.js"></script>
 </body>
 </html>
