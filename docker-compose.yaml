@@ -15,7 +15,7 @@ services:
     image: nginx:alpine
     container_name: proxy-kontti
     ports:
-      - "8080:80"
+      - "80:80"
     volumes:
       - ./proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
@@ -28,8 +28,6 @@ services:
   notes-api:
     build: ./notes-api
     container_name: api-kontti
-    ports:
-      - "3000:3000"
     environment:
       DB_HOST: database
       DB_USER: demo_user

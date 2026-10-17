@@ -8,18 +8,6 @@ data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
-
-  filter {
-    name   = "default-for-az"
-    values = ["true"]
-  }
-}
-
 # Latest Ubuntu 24.04 LTS x86_64 AMI published by Canonical.
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -36,7 +24,7 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# Same published ports as docker-compose.yaml (8080 proxy, 3000 API).
+# Only the nginx proxy (port 80) is public; it also forwards /api/ to the API.
 # Port 22 is opened for SSH with the lab's vockey key because Session Manager
 # may not be usable with the lab role.
 resource "aws_security_group" "instance" {
@@ -46,16 +34,8 @@ resource "aws_security_group" "instance" {
 
   ingress {
     description = "Compose nginx proxy"
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_cidr]
-  }
-
-  ingress {
-    description = "Compose notes API"
-    from_port   = 3000
-    to_port     = 3000
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = [var.allowed_cidr]
   }
@@ -84,8 +64,9 @@ resource "aws_security_group" "instance" {
 resource "aws_instance" "example" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.instance_type
-  subnet_id                   = data.aws_subnets.default.ids[0]
-  vpc_security_group_ids      = [aws_security_group.instance.id]
+  # No subnet_id: AWS picks a default subnet in an AZ that supports the
+  # instance type (fixes "not supported in us-east-1e").
+  vpc_security_group_ids       = [aws_security_group.instance.id]
   associate_public_ip_address = true
 
   # Empty string becomes null so the attribute is simply omitted.

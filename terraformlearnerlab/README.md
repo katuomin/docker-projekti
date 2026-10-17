@@ -9,7 +9,7 @@ instance that runs the existing `docker-compose.yaml`.
 | Learner Lab limit | Handling here |
 |---|---|
 | Cannot create IAM roles/instance profiles | Attaches the pre-made `LabInstanceProfile` (optional) |
-| VPC/subnet/gateway creation often denied | Uses the default VPC and a default subnet |
+| VPC/subnet/gateway creation often denied | Uses the default VPC; AWS picks a subnet in an AZ that supports the instance type |
 | Only `us-east-1` / `us-west-2` | Default region `us-east-1` |
 | Small instance types only | `t3.small` default |
 | Credentials expire with the session | Uses the temporary keys from the lab |

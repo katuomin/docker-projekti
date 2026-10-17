@@ -1,5 +1,5 @@
-// api osoite (paikallisessa testauksessa localhost:3000)
-const API_URL = 'http://localhost:3000/api/notes';
+// suhteellinen osoite: nginx-proxy ohjaa /api/ notes-api-konttiin
+const API_URL = '/api/notes';
 
 // Käsillä oleva muistiinpanolista (tallennetaan hae-kaudella)
 let notes = [];

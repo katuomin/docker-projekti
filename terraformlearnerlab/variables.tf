@@ -38,7 +38,7 @@ variable "key_name" {
 }
 
 variable "allowed_cidr" {
-  description = "CIDR allowed to reach ports 8080, 3000 and 22. Use your own IP/32 if you can."
+  description = "CIDR allowed to reach ports 80 and 22. Use your own IP/32 if you can."
   type        = string
   default     = "0.0.0.0/0"
 }

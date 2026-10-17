@@ -1,11 +1,6 @@
 output "web_url" {
   description = "Web app via the Compose nginx proxy (allow a few minutes after apply)."
-  value       = "http://${aws_instance.example.public_ip}:8080"
-}
-
-output "api_url" {
-  description = "Notes API, exposed directly as in docker-compose.yaml."
-  value       = "http://${aws_instance.example.public_ip}:3000"
+  value       = "http://${aws_instance.example.public_ip}"
 }
 
 output "ssh_command" {
