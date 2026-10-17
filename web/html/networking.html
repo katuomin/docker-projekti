@@ -27,7 +27,7 @@
 networks:
   frontend-network:
     driver: bridge</code></pre>
-    <p>Yksi palvelu voi kuulua useaan verkkoon. Se toimii tällöin verkkojen välisenä yhteyspisteenä, mutta muut palvelut voivat nähdä sen vain oman yhteisen verkonsa kautta. Compose-verkon tavallinen <code>bridge</code>-ajuri sopii saman Docker-isännän konttien yhdistämiseen.</p>
+    <p>Yksi palvelu voi kuulua useaan verkkoon. Se toimii tällöin verkkojen välisenä yhteyspisteenä, mutta muut palvelut voivat nähdä sen vain oman yhteisen verkkonsa kautta. Compose-verkon tavallinen <code>bridge</code>-ajuri sopii saman Docker-isännän konttien yhdistämiseen.</p>
     <p>Verkkoon liitetty palvelu löytyy nimellä, joka on määritelty kohdassa <code>services</code>. Esimerkiksi <code>http://notes-api:3000</code> tarkoittaa porttia 3000 palvelussa nimeltä <code>notes-api</code>. Porttia ei tarvitse julkaista isännälle, jotta toinen kontti voi käyttää sitä.</p>
 
     <h2>3. Tämän projektin verkot</h2>
