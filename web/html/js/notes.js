@@ -1,5 +1,5 @@
 // api osoite (paikallisessa testauksessa localhost:3000)
-const API_URL = 'http://localhost:3000/api/notes';
+const API_URL = '/api/notes';
 
 // Käsillä oleva muistiinpanolista (tallennetaan hae-kaudella)
 let notes = [];

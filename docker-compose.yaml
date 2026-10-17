@@ -28,8 +28,6 @@ services:
   notes-api:
     build: ./notes-api
     container_name: api-kontti
-    ports:
-      - "3000:3000"
     environment:
       DB_HOST: database
       DB_USER: demo_user
