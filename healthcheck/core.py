@@ -57,7 +57,7 @@ def classify_status(code: int) -> str:
     if 300 <= code <= 499:
         return "degraded"
     if 500 <= code <= 599:
-        return "down"
+        return "guh????"
     raise ValueError(f"not a valid HTTP status code: {code}")
 
 
