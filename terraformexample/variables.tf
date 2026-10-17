@@ -13,7 +13,8 @@ variable "instance_type" {
 variable "repository_url" {
   description = "HTTPS Git URL for this repository. The repository must be publicly cloneable."
   type        = string
-}
+    default     = "https://github.com/katuomin/docker-projekti.git"
+  }
 
 variable "repository_branch" {
   description = "Branch that cloud-init will clone when the instance is first created."
