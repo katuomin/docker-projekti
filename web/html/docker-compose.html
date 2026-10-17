@@ -12,15 +12,145 @@
     <p><a href="index.html">< Takaisin etusivulle</a></p>
   </header>
   <main>
-    <h2>2. Docker Compose</h2>
-    <p>Kun sovellus koostuu useasta palvelusta, käytetään <strong>Docker Composea</strong>. Sen avulla koko mikropalveluympäristö käynnistetään yhdellä komennolla.</p>
-    <pre><code>docker compose up --build -d</code></pre>
+    <h2>1. Mikä Docker Compose on?</h2>
+    <p>Docker Compose on tapa kuvata usean kontin muodostama sovellus yhdessä YAML-tiedostossa. Yhdessä palvelussa voi olla esimerkiksi käyttöliittymä, toisessa API ja kolmannessa tietokanta. Compose luo näille palveluille yhteisen ympäristön: kontit, verkot, porttiohjaukset, volyymit ja käynnistysriippuvuudet.</p>
+    <p>Compose ei ole uusi konttityyppi, vaan työkalu konttien hallintaan. <code>docker-compose.yaml</code> kertoo, miten jo olemassa olevat imaget käynnistetään ja miten projektin omat imaget rakennetaan.</p>
 
-    <h2>Tämän projektin compose-tiedosto</h2>
-    <p>Projekti koostuu viidestä palvelusta: <code>web</code> (nginx), <code>proxy</code> (nginx-reititys), <code>notes-api</code> (Node/Express), <code>database</code> (PostgreSQL) sekä nimenvolyymi <code>pgdata</code>. Palvelut on jaettu kahteen verkkoon: <code>frontend-network</code> ja <code>backend-network</code> (internal), jolloin tietokantaan ei pääse ulkopuolelta.</p>
-    <p><code>depends_on</code> ja <code>healthcheck</code> varmistavat, että palvelut käynnistyvät oikeassa järjestyksessä.</p>
+    <h2>2. Ensimmäinen käynnistys</h2>
+    <p>Kun komennot suoritetaan tämän repositorion juurikansiosta, koko pino voidaan rakentaa ja käynnistää näin:</p>
+    <pre><code># Rakenna omat imaget ja käynnistä palvelut taustalle
+docker compose up --build -d
+
+# Näytä palveluiden tila
+docker compose ps
+
+# Katso kaikkien palveluiden lokit
+docker compose logs -f</code></pre>
+    <p>Lippu <code>--build</code> rakentaa uudelleen <code>web</code>- ja <code>notes-api</code>-palveluiden imaget. <code>-d</code> jättää kontit käyntiin taustalle. Selain avaa sivun portin 80 kautta osoitteesta <a href="http://localhost">http://localhost</a>.</p>
+
+<h2>3. Build ja konttien pakotettu uudelleenluonti</h2>
+<p>Jos haluat varmistaa, että imaget rakennetaan uudelleen ja kontit luodaan varmasti uudestaan, käytä komentoa:</p>
+<pre><code>docker compose up --build --force-recreate</code></pre>
+<p>Komennon osat tarkoittavat seuraavaa:</p>
+<ul>
+  <li><code>up</code> käynnistää Compose-tiedoston palvelut.</li>
+  <li><code>--build</code> rakentaa <code>build</code>-määrityksellä tehdyt imaget ennen käynnistystä.</li>
+  <li><code>--force-recreate</code> poistaa nykyiset palvelukontit ja luo ne uudelleen, vaikka Compose ei havaitsisi asetuksissa muutosta.</li>
+</ul>
+<p>Tätä komentoa voi tarvita esimerkiksi silloin, kun Dockerfile, asennettavat riippuvuudet tai ympäristömuuttujat ovat muuttuneet ja haluat varmasti käynnistää uuden version kaikissa konteissa. Se on myös hyödyllinen vianmäärityksessä, jos vanha kontti käyttää epähuomiossa vanhaa imagea tai vanhoja konttiasetuksia.</p>
+<p>Komento ei poista nimettyä <code>pgdata</code>-volyymia, joten PostgreSQL:n data säilyy normaalisti. Konttien uudelleenluonti kuitenkin pysäyttää hetkeksi palvelut, joten tuotannossa komento kannattaa ajaa suunnitellun huoltokatkon yhteydessä. Jos haluat lisäksi poistaa volyymin ja tietokannan datan, siihen tarvitaan erikseen <code>docker compose down -v</code>.</p>
+
+<h2>4. Tämän projektin palvelut</h2>
+    <p>Nykyinen <code>docker-compose.yaml</code> määrittelee neljä palvelua. Lisäksi siinä on yksi nimetty volyymi ja kaksi käyttäjän määrittelemää verkkoa.</p>
+    <table>
+      <thead>
+        <tr><th>Palvelu</th><th>Tehtävä</th><th>Miten se syntyy?</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>web</code></td>
+          <td>Tarjoaa staattiset HTML-, CSS- ja JavaScript-tiedostot nginxillä.</td>
+          <td>Rakennetaan kansiosta <code>./web</code>.</td>
+        </tr>
+        <tr>
+          <td><code>proxy</code></td>
+          <td>On ulospäin näkyvä reititin. Se välittää sivupyynnöt web-palvelulle ja <code>/api/</code>-pyynnöt API:lle.</td>
+          <td>Käyttää imagea <code>nginx:alpine</code> ja projektin nginx-konfiguraatiota.</td>
+        </tr>
+        <tr>
+          <td><code>notes-api</code></td>
+          <td>Node.js- ja Express-sovellus, joka tarjoaa muistiinpanojen rajapinnan.</td>
+          <td>Rakennetaan kansiosta <code>./notes-api</code>.</td>
+        </tr>
+        <tr>
+          <td><code>database</code></td>
+          <td>PostgreSQL-tietokanta, johon API tallentaa muistiinpanot.</td>
+          <td>Käyttää imagea <code>postgres:17-alpine</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Palvelun nimi toimii Composen sisäisenä DNS-nimenä. Siksi API voi ottaa yhteyden tietokantaan osoitteella <code>database:5432</code>, eikä tietokannan IP-osoitetta tarvitse tietää etukäteen.</p>
+
+    <h2>5. Rakentaminen ja imaget</h2>
+    <p><code>web</code>-palvelun kohta <code>build: ./web</code> käyttää rakennuskontekstina <code>web</code>-kansiota. Sen Dockerfile kopioi HTML-sisällön nginxin tarjoiltavaksi. <code>notes-api</code> rakennetaan vastaavasti kansiosta <code>./notes-api</code>; sen Dockerfile asentaa Node-riippuvuudet ja käynnistää <code>server.js</code>-tiedoston.</p>
+    <pre><code>services:
+  web:
+    build: ./web
+
+  notes-api:
+    build: ./notes-api
+
+  database:
+    image: postgres:17-alpine</code></pre>
+    <p><code>build</code> tarkoittaa, että image tehdään projektin Dockerfilesta. <code>image</code> tarkoittaa, että Compose hakee tai käyttää valmista imagea. Molemmat palvelut voivat esiintyä samassa Compose-tiedostossa.</p>
+
+    <h2>6. Reititys verkkojen avulla</h2>
+    <p>Palvelut on jaettu kahteen verkkoon:</p>
+    <ul>
+      <li><code>frontend-network</code> yhdistää proxyn, web-palvelun ja API:n.</li>
+      <li><code>backend-network</code> yhdistää API:n ja tietokannan. Verkko on määritelty asetuksella <code>internal: true</code>, joten sitä ei ole tarkoitettu ulkoiseen liikenteeseen.</li>
+    </ul>
+    <p><code>proxy</code> julkaisee ainoana palveluna isännän portin:</p>
+    <pre><code>ports:
+  - "80:80"</code></pre>
+    <p>Proxyn nginx-konfiguraatio ohjaa pyynnöt palvelunimillä:</p>
+    <pre><code>location / {
+    proxy_pass http://web:80;
+}
+
+location /api/ {
+    proxy_pass http://notes-api:3000/api/;
+}</code></pre>
+    <p>Selain ottaa yhteyden vain proxyyn. Web-palvelua, API:a tai tietokantaa ei tarvitse julkaista suoraan isännän porteilla.</p>
+
+    <h2>7. Ympäristömuuttujat ja tietokannan pysyvyys</h2>
+    <p><code>notes-api</code> saa tietokantayhteyden asetukset ympäristömuuttujina. Esimerkiksi <code>DB_HOST: database</code> viittaa Compose-palveluun nimeltä <code>database</code>. PostgreSQL saa samat tunnistetiedot muuttujilla <code>POSTGRES_USER</code>, <code>POSTGRES_PASSWORD</code> ja <code>POSTGRES_DB</code>.</p>
+    <pre><code>environment:
+  DB_HOST: database
+  DB_PORT: 5432
+  DB_NAME: demo_notes</code></pre>
+    <p>Palvelu <code>database</code> liittää nimetyn volyymin tietokannan datakansioon:</p>
+    <pre><code>volumes:
+  - pgdata:/var/lib/postgresql/data</code></pre>
+    <p>Volyymi säilyttää PostgreSQL-datan, vaikka tietokantakontti poistetaan ja luodaan uudelleen. Volyymi ei kuitenkaan ole varmuuskopio: demo-tunnukset ja salasanat pitäisi oikeassa tuotannossa siirtää salaisuuksien hallintaan.</p>
+
+    <h2>8. Käynnistysjärjestys ja healthcheckit</h2>
+    <p><code>depends_on</code> kertoo, että proxy tarvitsee terveen <code>web</code>-palvelun ja API tarvitsee terveen <code>database</code>-palvelun. Healthcheck tarkistaa, vastaako palvelu oikeasti pyyntöihin; pelkkä kontin käynnistyminen ei vielä tarkoita, että sovellus on valmis.</p>
+    <pre><code>depends_on:
+  database:
+    condition: service_healthy</code></pre>
+    <p>Tietokannan tarkistus käyttää <code>pg_isready</code>-komentoa. Web-palvelun tarkistus hakee nginxin etusivun <code>wget</code>-komennolla. API:n nykyinen healthcheck käyttää Pythonia:</p>
+    <pre><code>test: ["CMD", "python", "-c",
+  "import urllib.request as u; u.urlopen('http://127.0.0.1:3000/health')"]</code></pre>
+    <p>Huomio: <code>notes-api/Dockerfile</code> perustuu <code>node:22-alpine</code>-imageen eikä asenna Pythonia. Lisäksi nykyinen <code>server.js</code> ei määrittele <code>/health</code>-reittiä. Tämän vuoksi API:n healthcheck kannattaa korjata ennen kuin sen varaan rakennetaan käynnistyslogiikka, esimerkiksi lisäämällä sovellukseen kevyt health-reitti ja käyttämällä tarkistukseen imagessa varmasti olevaa työkalua. Nykyisessä tiedostossa proxy ei kuitenkaan riipu API:n healthcheckistä, joten sivu voi silti palvella staattista sisältöä.</p>
+
+    <h2>9. Hyödylliset ylläpitokomennot</h2>
+    <pre><code># Käynnistä uudelleen ilman uutta buildia
+docker compose restart
+
+# Katso yhden palvelun lokit
+docker compose logs -f notes-api
+
+# Aja komento käynnissä olevassa kontissa
+docker compose exec database pg_isready -U demo_user -d demo_notes
+
+# Pysäytä kontit ja verkot, säilytä volyymi
+docker compose down
+
+# Poista myös nimetty volyymi (tietokannan data häviää)
+docker compose down -v</code></pre>
+    <p><code>docker compose down</code> poistaa Compose-kontit ja verkot, mutta jättää nimetyn <code>pgdata</code>-volyymin talteen. Lippu <code>-v</code> on tuhoisa tietokannan datalle, joten sitä käytetään vain, kun data saa oikeasti poistua.</p>
+
+    <h2>10. Tiivistelmä</h2>
+    <ul>
+      <li>Compose kokoaa web-palvelun, proxyn, API:n ja tietokannan yhdeksi ajettavaksi kokonaisuudeksi.</li>
+      <li>Palvelut löytävät toisensa nimillä, kuten <code>web</code> ja <code>database</code>.</li>
+      <li>Vain proxy julkaisee portin 80 ulospäin; verkot rajaavat palveluiden välistä liikennettä.</li>
+      <li><code>pgdata</code>-volyymi säilyttää tietokannan datan konttien elinkaaren yli.</li>
+      <li>Healthcheck kertoo palvelun valmiudesta, mutta tarkistuksen komennon ja reitin on vastattava käytössä olevaa imagea ja sovellusta.</li>
+    </ul>
   </main>
-  <footer><p>footer</p></footer>
+  <footer><p>Docker Compose – esimerkit tästä repositorysta</p></footer>
   <script src="js/notes.js"></script>
 </body>
 </html>
