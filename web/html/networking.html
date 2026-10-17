@@ -12,9 +12,138 @@
     <p><a href="index.html">< Takaisin etusivulle</a></p>
   </header>
   <main>
-    <p>kontsaa tänne</p>
+    <h2>1. Mikä Docker-verkko on?</h2>
+    <p>Docker-verkko yhdistää kontteja toisiinsa. Samassa verkossa olevat kontit voivat ottaa yhteyden toisiinsa palvelun nimellä, esimerkiksi <code>database</code> tai <code>notes-api</code>. Docker huolehtii verkon sisäisestä nimenselvityksestä, joten konttien IP-osoitteita ei tarvitse kirjoittaa Compose-tiedostoon.</p>
+    <p>Verkko myös rajaa liikennettä. Kontti voi keskustella vain niiden palveluiden kanssa, joihin se on liitetty. Tämä auttaa rakentamaan ympäristön, jossa julkinen reititin, sovelluspalvelut ja tietokanta eivät kaikki ole samassa verkossa.</p>
+
+    <h2>2. Verkkojen käyttö Docker Composessa</h2>
+    <p>Compose luo projektin verkot automaattisesti, kun pino käynnistetään. Palvelu liitetään verkkoon palvelun alla olevalla <code>networks</code>-määrityksellä:</p>
+    <pre><code>services:
+  api:
+    networks:
+      - frontend-network
+      - backend-network
+
+networks:
+  frontend-network:
+    driver: bridge</code></pre>
+    <p>Yksi palvelu voi kuulua useaan verkkoon. Se toimii tällöin verkkojen välisenä yhteyspisteenä, mutta muut palvelut voivat nähdä sen vain oman yhteisen verkonsa kautta. Compose-verkon tavallinen <code>bridge</code>-ajuri sopii saman Docker-isännän konttien yhdistämiseen.</p>
+    <p>Verkkoon liitetty palvelu löytyy nimellä, joka on määritelty kohdassa <code>services</code>. Esimerkiksi <code>http://notes-api:3000</code> tarkoittaa porttia 3000 palvelussa nimeltä <code>notes-api</code>. Porttia ei tarvitse julkaista isännälle, jotta toinen kontti voi käyttää sitä.</p>
+
+    <h2>3. Tämän projektin verkot</h2>
+    <p>Tässä projektissa on kaksi verkkoa, joilla erotetaan käyttöliittymän liikenne tietokannan taustaverkosta:</p>
+    <table>
+      <thead>
+        <tr><th>Verkko</th><th>Palvelut</th><th>Tarkoitus</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>frontend-network</code></td>
+          <td><code>proxy</code>, <code>web</code>, <code>notes-api</code></td>
+          <td>Välittää selaimen, proxyn, staattisen web-palvelun ja API:n välistä liikennettä.</td>
+        </tr>
+        <tr>
+          <td><code>backend-network</code></td>
+          <td><code>notes-api</code>, <code>database</code></td>
+          <td>Mahdollistaa API:n ja PostgreSQL:n välisen yhteyden. Verkko on ulkoiselta liikenteeltä rajattu.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><code>notes-api</code> kuuluu molempiin verkkoihin. Se voi vastaanottaa API-pyynnöt <code>frontend-network</code>-verkosta ja ottaa tietokantayhteyden <code>backend-network</code>-verkossa. <code>database</code> kuuluu vain backend-verkkoon, joten sitä ei ole liitetty suoraan proxyyn tai web-palveluun.</p>
+
+    <h2>4. Frontend-verkon liikenne</h2>
+    <p>Proxy on ainoa palvelu, joka julkaisee portin isäntäkoneelle:</p>
+    <pre><code>proxy:
+  ports:
+    - "80:80"
+  networks:
+    - frontend-network</code></pre>
+    <p>Proxyn nginx-konfiguraatio käyttää Compose-palveluiden nimiä:</p>
+    <pre><code>location / {
+    proxy_pass http://web:80;
+}
+
+location /api/ {
+    proxy_pass http://notes-api:3000/api/;
+}</code></pre>
+    <p>Kun selain pyytää <code>http://localhost/</code>, pyyntö saapuu proxylle. Proxy löytää <code>web</code>-kontin Dockerin sisäisen DNS:n avulla. Kun selain käyttää muistiinpanojen API:a, <code>/api/</code>-pyyntö ohjataan samalla tavalla <code>notes-api</code>-palvelulle.</p>
+
+    <h2>5. Backend-verkon eristys</h2>
+    <p>Backend-verkko on määritelty asetuksella <code>internal: true</code>:</p>
+    <pre><code>networks:
+  backend-network:
+    internal: true</code></pre>
+    <p>Se tarkoittaa, että verkko on tarkoitettu Dockerin sisäiseen liikenteeseen eikä sitä julkaista suoraan ulkoiseen verkkoon. Tietokannalle ei ole määritelty <code>ports</code>-kohtaa, joten isäntäkoneen porttia ei avata PostgreSQL:lle. API käyttää tietokantaa sisäisesti osoitteella <code>database:5432</code>.</p>
+    <p><code>internal: true</code> ei tarkoita, että verkon palvelut olisivat toisiltaan piilossa: <code>notes-api</code> ja <code>database</code> voivat edelleen keskustella keskenään. Se rajoittaa verkon ulkoista yhteyttä. Turvallisuus riippuu lisäksi sovelluksen asetuksista, tunnuksista ja siitä, mitä muita verkkoja palveluihin liitetään.</p>
+
+    <h2>6. Verkkojen tarkastaminen komennoilla</h2>
+    <pre><code># Listaa Dockerin verkot
+docker network ls
+
+# Näytä yhden verkon kontit ja asetukset
+docker network inspect docker-rojekti_frontend-network
+
+# Tarkista Compose-palveluiden tila
+docker compose ps
+
+# Tarkista yhteys API-kontista tietokantaan
+docker compose exec notes-api node -e \
+  "require('dns').lookup('database', console.log)"</code></pre>
+    <p>Compose lisää verkon nimeen yleensä projektin nimen etuliitteen, kuten <code>docker-rojekti_</code>. Tarkka nimi kannattaa tarkistaa komennolla <code>docker network ls</code>, jos projektin nimeä on muutettu.</p>
+
+    <h2>7. Mikä Docker-volyymi on?</h2>
+    <p>Kontin oma tiedostojärjestelmä on sidoksissa kontin elinkaareen. Jos kontti poistetaan, sen sisälle kirjoitetut muutokset voivat kadota. Volyymi tallentaa valitut tiedostot kontin ulkopuolelle, jolloin uusi kontti voi käyttää samaa dataa.</p>
+    <p>Volyymit sopivat erityisesti tietokantojen dataan. Ne eivät ole sama asia kuin image: image sisältää sovelluksen lähtötiedostot, kun taas volyymi sisältää käytön aikana syntyvää dataa. Volyymi ei myöskään ole automaattinen varmuuskopio.</p>
+
+    <h2>8. Nimetty volyymi tässä projektissa</h2>
+    <p>PostgreSQL käyttää Composen nimettyä volyymiä:</p>
+    <pre><code>services:
+  database:
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:</code></pre>
+    <p>Vasemmanpuoleinen <code>pgdata</code> on Dockerin hallitseman volyymin nimi. Oikeanpuoleinen <code>/var/lib/postgresql/data</code> on PostgreSQL:n datakansio kontin sisällä. Kun <code>database</code>-kontti luodaan uudelleen, PostgreSQL löytää aiemmin tallennetut taulut ja muistiinpanot samasta volyymistä.</p>
+    <p><code>docker compose down</code> poistaa kontit ja verkot, mutta säilyttää normaalisti nimetyn volyymin. Siksi tietokannan data säilyy tavallisen uudelleenkäynnistyksen jälkeen. Komento <code>docker compose down -v</code> poistaa myös volyymin, joten sitä käytettäessä tämän demon muistiinpanot häviävät.</p>
+
+    <h2>9. Bind mount ja volyymi ovat eri asioita</h2>
+    <p>Compose-tiedostossa on myös bind mount proxyn nginx-konfiguraatiolle:</p>
+    <pre><code>proxy:
+  volumes:
+    - ./proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro</code></pre>
+    <p>Tässä lähdekoneen tiedosto <code>./proxy/nginx.conf</code> liitetään suoraan kontin polkuun <code>/etc/nginx/conf.d/default.conf</code>. Tämä ei ole nimetty Docker-volyymi, vaan bind mount, jossa käytetään projektin omaa tiedostoa.</p>
+    <ul>
+      <li>Nimetty volyymi, kuten <code>pgdata</code>, on Dockerin hallitsema ja sopii pysyvälle sovellusdatalle.</li>
+      <li>Bind mount käyttää tiettyä isäntäkoneen tiedostoa tai kansiota ja sopii esimerkiksi konfiguraatioon kehityksen aikana.</li>
+      <li><code>:ro</code> tekee nginx-konfiguraation kontissa vain luku -tilaan, joten proxy ei voi muokata projektin tiedostoa.</li>
+    </ul>
+
+    <h2>10. Volyymien tarkastaminen ja siivoaminen</h2>
+    <pre><code># Listaa nimetyt Docker-volyymit
+docker volume ls
+
+# Näytä volyymin sijainti ja käyttö
+docker volume inspect docker-rojekti_pgdata
+
+# Näytä Compose-palveluiden volyymit
+docker compose config
+
+# Poista käyttämätön volyymi (tarkista nimi ensin)
+docker volume rm volyymin_nimi</code></pre>
+    <p>Volyymiä ei pidä poistaa sokkona, jos siinä voi olla tärkeää dataa. Tämän projektin <code>pgdata</code>-volyymiä käytetään PostgreSQL:n pysyvään dataan, joten ennen poistamista kannattaa ottaa varmuuskopio tai varmistaa, että demon tiedot saa luoda uudelleen.</p>
+
+    <h2>11. Tiivistelmä</h2>
+    <ul>
+      <li>Docker-verkot yhdistävät kontteja ja tarjoavat palvelunimillä toimivan sisäisen DNS:n.</li>
+      <li><code>frontend-network</code> yhdistää proxyn, web-palvelun ja API:n.</li>
+      <li><code>backend-network</code> yhdistää API:n ja tietokannan, ja <code>internal: true</code> rajaa verkon ulkoista liikennettä.</li>
+      <li><code>pgdata</code> säilyttää PostgreSQL:n datan konttien uudelleenluonnin yli.</li>
+      <li>Bind mountilla projektin nginx-konfiguraatio tuodaan proxy-konttiin vain luku -tilassa.</li>
+      <li>Verkot ja volyymit poistuvat eri tavalla: <code>down</code> poistaa kontit ja verkot, mutta ei yleensä nimettyjä volyymejä.</li>
+    </ul>
   </main>
-  <footer><p>footer</p></footer>
+  <footer><p>Docker-verkot ja volyymit – esimerkit tästä repositorysta</p></footer>
   <script src="js/notes.js"></script>
 </body>
 </html>
