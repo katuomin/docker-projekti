@@ -3,50 +3,91 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>IaC: ympäristö pilveen</title>
+  <title>AWS IaC Terraformilla</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <header>
-    <h1>IaC: ympäristö pilveen</h1>
+    <h1>AWS IaC Terraformilla</h1>
     <p><a href="index.html">< Takaisin etusivulle</a></p>
   </header>
   <main>
-    <h1>Terraform AWS -ympäristön määrittely ja hallinta</h1>
-    <p>Tässä osiossa käydään läpi, kuinka voit määritellä ja hallita AWS-ympäristöä Terraformin avulla.</p>
-    <h2>Tiedostot</h2>
+    <h2>Mikä Terraform on?</h2>
+    <p>Terraform on infrastruktuurin koodina (Infrastructure as Code, IaC) käytettävä työkalu. AWS-ympäristö kuvataan Terraform-tiedostoissa, ja Terraform vertaa kuvausta nykyiseen ympäristöön. Näin samoja resursseja voidaan luoda ja päivittää toistettavasti komentoriviltä.</p>
     <ul>
-      <li><code>main.tf</code> – pääasiallinen Terraform-konfiguraatiotiedosto.</li>
-      <li><code>variables.tf</code> – muuttujien määrittelyt.</li>
-      <li><code>outputs.tf</code> – ulostulot, joita Terraform näyttää ajon jälkeen.</li>
-      <li><code>versions.tf</code> – määrittelee Terraformin ja providerien versiot.</li>
-      <li><code>README.md</code> – dokumentaatio projektista.</li>
-      <li><code>user-data.tf</code> – käyttäjädata EC2-instansseille.</li>
-      <li><code>terraform.tfvars</code> – tiedosto, jossa määritellään muuttujien arvot.</li>
-      <li><code>.gitignore</code> – tiedosto, joka määrittelee, mitkä tiedostot Gitin tulee jättää huomiotta (esim. Terraformin tila).</li>
-      <li><code>terraform.tfstate</code> – Terraformin tila, joka tallentaa resurssien nykyisen tilan.</li>
-      <li><code>terraform.tfstate.backup</code> – Varmuuskopio edellisestä tilasta.</li>
-      <li><code>terraform.lock.hcl</code> – lukitsee providerien versiot, jotta ympäristö pysyy ennustettavana.</li>
-      <li><code>backend.tf</code> – määrittelee Terraformin backendin, esimerkiksi S3:n tilan tallentamiseen.</li>
-      <li><code>provider.tf</code> – määrittelee käytettävät Terraform-providerit, kuten AWS-providerin.</li>
-      <li><code>modules/</code> – hakemisto, jossa sijaitsevat uudelleenkäytettävät Terraform-moduulit.</li>
-      <li><code>scripts/</code> – hakemisto, jossa sijaitsevat apuskriptit, kuten alustusskriptit tai muut automatisointityökalut.</li>
-      <li><code>docs/</code> – hakemisto, jossa sijaitsevat projektin dokumentaatiotiedostot.</li>
-      <li><code>tests/</code> – hakemisto, jossa sijaitsevat testit Terraform-konfiguraatioille.</li>
-
+      <li><code>terraform init</code> alustaa hakemiston ja lataa tarvittavan AWS-providerin.</li>
+      <li><code>terraform plan</code> näyttää, mitä Terraform aikoo luoda, muuttaa tai poistaa.</li>
+      <li><code>terraform apply</code> toteuttaa suunnitelman AWS-tilillä hyväksynnän jälkeen.</li>
+      <li><code>terraform destroy</code> poistaa Terraformin hallinnoimat resurssit.</li>
     </ul>
-    <h2>Käyttöönotto</h2>
-    <p>Terraformin käyttöönotto tapahtuu seuraavasti:</p>
+    <p>Terraformin state-tiedosto yhdistää koodissa määritellyt resurssit AWS-resursseihin. Älä muokkaa sitä käsin tai lisää sitä versionhallintaan. Älä myöskään tallenna AWS-avaimia Terraform-tiedostoihin.</p>
+
+    <h2>Miten tämä projekti käynnistyy?</h2>
+    <p>Tämän projektin Terraform-esimerkki luo EC2-virtuaalikoneen. Käynnistyksen yhteydessä asennusskripti asentaa Dockerin, kloonaa projektin GitHubista ja suorittaa olemassa olevan Docker Compose -kokoonpanon.</p>
     <ol>
-      <li>Alusta Terraform-työtila: <code>terraform init</code></li>
-      <li>Tarkista suunnitellut muutokset: <code>terraform plan</code></li>
-      <li>Ota muutokset käyttöön: <code>terraform apply</code></li>
+      <li>Terraform luo EC2-instanssin ja sitä suojaavan security groupin.</li>
+      <li>EC2:n user data -skripti asentaa Dockerin ja Gitin.</li>
+      <li>Skripti kloonaa projektin valitun Git-haaran ja suorittaa <code>docker compose up -d --build</code>.</li>
+      <li>Docker Compose käynnistää web-sivun, nginx-proxyn, notes-API:n ja PostgreSQL-tietokannan.</li>
     </ol>
-    <p>Kun muutokset on otettu käyttöön, Terraform päivittää AWS-ympäristön määrittelyjesi mukaisesti.</p>
-    <h2>Huomioitavaa</h2>
-    <p>Muista, että Terraformin tila tallennetaan paikallisesti tiedostoon <code>terraform.tfstate</code>. Tämä tiedosto sisältää tietoa kaikista hallinnoimistasi resursseista, joten sitä ei tulisi muokata käsin. Lisäksi on suositeltavaa lisätä se <code>.gitignore</code>-tiedostoon, jotta se ei päädy versionhallintaan.</p>
+    <p>Selain käyttää nginx-proxyä HTTP-portissa 80. Proxy välittää <code>/api/</code>-pyynnöt notes-API:lle, joten API:n porttia ei tarvitse avata internetiin.</p>
+
+    <h2>Käynnistä AWS Academy Learner Labissa</h2>
+    <p>Rajoitettua Learner Lab -tiliä varten projektissa on oma <code>terraformlearnerlab/</code>-hakemisto. Se käyttää tilin oletus-VPC:tä ja valmiiksi luotuja <code>LabInstanceProfile</code>- ja <code>vockey</code>-asetuksia. Se ei yritä luoda omaa VPC:tä tai IAM-rooleja.</p>
+
+    <h3>1. Tarkista vaatimukset</h3>
+    <ul>
+      <li>Asenna Terraform (vähintään 1.5) ja AWS CLI.</li>
+      <li>Käynnistä AWS Academy Learner Lab ja valitse <strong>AWS Details</strong> → <strong>Show</strong>.</li>
+      <li>Projektin GitHub-repositorion ja valitun haaran pitää olla julkisesti kloonattavissa.</li>
+    </ul>
+
+    <h3>2. Aseta Learner Lab -tunnukset</h3>
+    <p>Syötä labin näyttämät Access key, Secret key ja Session token samaan PowerShell-istuntoon, jossa ajat Terraformia. Älä kirjoita arvoja tiedostoon tai julkaise niitä.</p>
+    <pre><code>$env:AWS_ACCESS_KEY_ID = "&lt;Access key&gt;"
+$env:AWS_SECRET_ACCESS_KEY = "&lt;Secret key&gt;"
+$env:AWS_SESSION_TOKEN = "&lt;Session token&gt;"
+$env:AWS_REGION = "us-east-1"
+aws sts get-caller-identity</code></pre>
+    <p>WSL:ssä tai bashissa käytä vastaavasti <code>export AWS_ACCESS_KEY_ID=...</code>, <code>export AWS_SECRET_ACCESS_KEY=...</code> ja <code>export AWS_SESSION_TOKEN=...</code>. Labin tunnukset vanhenevat istunnon päättyessä.</p>
+
+    <h3>3. Alusta ja tarkista Terraform</h3>
+    <p>Aja komennot projektin juurihakemistosta. Terraform valitsee tässä hakemistossa olevan Learner Lab -kokoonpanon:</p>
+    <pre><code>cd terraformlearnerlab
+terraform init
+terraform validate
+terraform plan</code></pre>
+    <p>Tarkista suunnitelmasta, että luotavat resurssit ovat odotetut. Oletuksena alue on <code>us-east-1</code> ja instanssityyppi <code>t3.small</code>.</p>
+
+    <h3>4. Luo resurssit ja avaa sivu</h3>
+    <pre><code>terraform apply</code></pre>
+    <p>Hyväksy suunnitelma kirjoittamalla <code>yes</code>. Ensimmäinen käynnistys asentaa ohjelmat ja rakentaa kontit, joten odota muutama minuutti. Avaa tämän jälkeen Terraformin tulostama <code>web_url</code> tai tarkista se komennolla:</p>
+    <pre><code>terraform output -raw web_url</code></pre>
+
+    <h3>Hyödyllisiä valintoja</h3>
+    <ul>
+      <li>Oletuksena repositoriohaara on <code>main</code>. Käytä toista haaraa näin: <code>terraform apply -var="repository_branch=terraformtesti"</code>. Varmista, että haluamasi Docker- ja verkkokonfiguraation muutokset on pushattu valittuun haaraan.</li>
+      <li>Security group sallii oletuksena liikenteen internetistä. Rajaa sekä HTTP- että SSH-yhteydet omaan IP-osoitteeseesi esimerkiksi näin: <code>terraform apply -var="allowed_cidr=203.0.113.10/32"</code> (vaihda esimerkkiosoite omaan julkiseen IP-osoitteeseesi).</li>
+      <li>Jos Learner Lab -tililläsi ei ole valmiita profiilia tai avainparia, voit kokeilla: <code>terraform apply -var="instance_profile_name=" -var="key_name="</code>. Tällöin SSH-yhteys ei ole käytettävissä.</li>
+    </ul>
+
+    <h2>Tiedostot tässä esimerkissä</h2>
+    <ul>
+      <li><code>main.tf</code> – hakee oletus-VPC:n ja Ubuntu-levykuvan sekä luo EC2-instanssin ja security groupin.</li>
+      <li><code>variables.tf</code> – määrittää alueen, instanssityypin, Git-haaran ja muut valinnat.</li>
+      <li><code>user-data.sh.tftpl</code> – asennusskripti, joka valmistelee koneen ja käynnistää Compose-palvelut.</li>
+      <li><code>outputs.tf</code> – näyttää sivun URL-osoitteen ja SSH-yhteyskomennon.</li>
+      <li><code>versions.tf</code> – määrittää Terraform- ja AWS-provider-vaatimukset.</li>
+      <li><code>terraform.tfstate</code> – paikallinen resurssitila; pidä se omana tiedostonasi äläkä commitoi sitä.</li>
+    </ul>
+    <p>Projektissa on myös <code>terraformexample/</code> tavalliselle AWS-tilille, jossa käyttäjällä on oikeudet luoda VPC- ja IAM-resursseja. Learner Labissa käytä yllä kuvattua <code>terraformlearnerlab/</code>-hakemistoa.</p>
+
+    <h2>Siivoa resurssit käytön jälkeen</h2>
+    <p>EC2-instanssi ja sen julkinen IP voivat aiheuttaa kustannuksia, vaikka et käyttäisi sovellusta. Poista resurssit samasta <code>terraformlearnerlab/</code>-hakemistosta:</p>
+    <pre><code>terraform destroy</code></pre>
+    <p>Hyväksy poisto kirjoittamalla <code>yes</code>. PostgreSQL-data on instanssin levyllä ja häviää, kun instanssi poistetaan.</p>
   </main>
-  <footer><p>footer</p></footer>
+  <footer><p>AWS IaC Terraformilla – esimerkit tästä repositorysta</p></footer>
   <script src="js/notes.js"></script>
 </body>
 </html>
