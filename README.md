@@ -39,7 +39,7 @@ Esivaatimukset:
 
 
 
-Kloonaa repositorio:
+Kloonaa repo:
 
    git clone https://github.com/katuomin/docker-projekti.git
 
@@ -49,15 +49,15 @@ Mene kansion sisälle esimerkiksi WSL:ää käyttäen
 
 Rakenna ympäristö komennolla
 
-    docker compose up -d --build --force-recreate
+    docker compose up
 
 Ympäristö lähtee pyörimään localhost:80 portissa.
 
-Ympäristön voi sammuttaa komennolla 
+Ympäristön voi kokeilun jälkeen tuhota komennolla
 
     docker compose down
 
-Healtchecks
+Healthchecks
 
 Tarkistaa Notes-api-, web- ja database-konttien päätepisteiden(endpoints) toimivuuden ympäristöä luodessa. Tarkemmat ohjeet manuaalisten tarkistusten ajamiseen ACTIONS.md tiedostossa.
 
