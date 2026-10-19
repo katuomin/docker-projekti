@@ -10,7 +10,7 @@ Sivusto koostuu seuraavista konteista:
 | api-kontti | Node.js api (notes-api), joka käsittelee muistiinpanoja verkkosivun ja tietokannan välillä |
 | database-kontti | PostgreSQL-tietokanta, muistiinpanot tallennettu tänne |
 
-Ympäristön luonti:
+## Ympäristön luonti:
 
 
 Docker lukee docker-compose.yaml-tiedoston ja käynnistää palvelut riippuvuuksien mukaan.
@@ -19,7 +19,7 @@ Muut kontit ja niiden palvelut käynnistetään rinnakkain heti alussa.
 Ulkoinen HTTP-liikenne tulee proxy-kontin kautta portista 80 (nginx-alpine)
 
 
-Verkot
+## Verkot
 
 
 Ympäristö käyttää kahta Docker-verkkoa:
@@ -34,8 +34,8 @@ Ympäristö käyttää kahta verkkoa: frontend-network ja backend-network. Taust
 Kuinka luot ympäristön itsellesi:
 
 Esivaatimukset:
-    -Docker isäntäkoneella
-    -Git
+    - Docker isäntäkoneella
+    - Git
 
 
 
@@ -57,11 +57,11 @@ Ympäristön voi kokeilun jälkeen tuhota komennolla
 
     docker compose down
 
-Healthchecks
+## Healthchecks
 
 Tarkistaa Notes-api-, web- ja database-konttien päätepisteiden(endpoints) toimivuuden ympäristöä luodessa. Tarkemmat ohjeet manuaalisten tarkistusten ajamiseen ACTIONS.md tiedostossa.
 
-Volumes
+## Volumes
 
 
 Isäntäkoneen tiedosto ./proxy/nginx.conf liitetään kontin sisälle bind mountilla (/etc/nginx/conf.d/default.conf:ro), jolloin hostilla tehdyt muutokset näkyvät kontissa heti (":ro" tekee nginx-konfiguraation kontissa vain luku -tilaan, joten proxy ei voi muokata projektin tiedostoa).
