@@ -12,7 +12,11 @@ joka koostuu seuraavista:
 
 Sovelluksen luonti:
 
-Docker lukee compose.yaml-tiedostoa, jonka pohjalta se lähtee luomaan kontteja ja verkkoja. Kontit luodaan järjestyksessä paitsi healthcheck testejä odottavat kontit web-, notes-api- ja proxy-kontti. Tällä varmistetaan, että muista konteista riippuvaiset osat eivät lähde käynnistymään ennen kuin ne ovat valmiina. Kaikki liikenne käyttäjiltä ohjataan proxyn lävitse (nginx-alpine).
+
+Docker Compose lukee docker-compose.yaml-tiedoston ja käynnistää palvelut riippuvuuksien mukaan.
+proxy käynnistyy vasta, kun web on toimintakunnossa, ja notes-api käynnistyy vasta, kun database on toimintakunnossa (depends_on: condition: service_healthy).
+Muut kontit käynnistetään rinnakkain heti alussa. 
+Ulkoinen HTTP-liikenne tulee proxy-kontin kautta portista 80 (nginx-alpine)
 
 
 Verkot
@@ -49,7 +53,9 @@ Rakenna ympäristö komennolla
 
 Ympäristö lähtee pyörimään localhost:80 portissa.
 
-Ympäristön voi sammuttaa komennolla "docker compose down"
+Ympäristön voi sammuttaa komennolla 
+
+    docker compose down
 
 Healtchecks
 
