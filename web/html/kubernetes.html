@@ -17,7 +17,7 @@
     <p>Kun sovelluksia ajetaan useissa konteissa useilla eri palvelimilla, manuaalinen hallinta käy nopeasti mahdottomaksi. Kubernetes huolehtii automaattisesti konttien sijoittelusta, uudelleenkäynnistyksistä vikatilanteissa sekä liikenteen ohjauksesta.</p>
 
     <h2>2. Klusterin perusarkkitehtuuri</h2>
-    <p>Kubernetes-klusteri koostuu kahdesta pääosasta: <strong>Control Planesta</strong> (ohjaustaso) ja <strong>Worker Nodeista</strong> (työsolmut).</p>
+    <p>Kubernetes-klusteri koostuu kahdesta pääosasta: <strong>Control Planesta</strong> (ohjaustaso) ja <strong>Worker Nodeista</strong> (sovelluksia suorittavat solmut).</p>
     <ul>
       <li><strong>Control Plane:</strong> Hallitsee klusterin tilaa. Se sisältää komponentit kuten <code>kube-apiserver</code> (rajapinta kaikille komennoille), <code>etcd</code> (klusterin hajautettu tietokanta) ja <code>kube-scheduler</code> (päättää millä nodella kukin pod ajetaan).</li>
       <li><strong>Worker Node:</strong> Palvelin (fyysinen tai virtuaalikone), jossa itse sovelluskontit ajetaan. Nodella toimii <code>kubelet</code> (agentti, joka kommunikoi apiserverin kanssa) sekä <code>kube-proxy</code> (verkkoliikenteen reititys).</li>
@@ -39,7 +39,7 @@ spec:
         - containerPort: 80</code></pre>
     <p>Podit ovat luonteeltaan väliaikaisia: jos pod tuhoutuu tai node kaatuu, pod ei palaa takaisin samana, vaan tilalle luodaan uusi.</p>
 
-    <h2>4. Deployment – Hallintaa ja itseparantuvuutta</h2>
+    <h2>4. Deployment – Hallintaa ja itsekorjautuvuutta (self-healing)</h2>
     <p>Käytännössä podeja ei juuri koskaan luoda suoraan, vaan niiden elinkaarta ohjataan <strong>Deployment</strong>-resurssilla. Deployment määrittelee halutun tilan (esim. montako kopiota podista halutaan ajaa) ja huolehtii automaattisesti päivityksistä ilman käyttökatkoa (rolling updates).</p>
     <pre><code>apiVersion: apps/v1
 kind: Deployment
@@ -91,7 +91,28 @@ metadata:
 data:
   APP_ENV: "production"
   PORT: "3000"</code></pre>
-    <p>Nämä voidaan injektoida podeille ympäristömuuttujina (<code>env</code>) tai liittää tiedostoina tiedostojärjestelmään (<code>volumes</code>). Secret-resurssi toimii samalla tavalla, mutta tiedot ovat oletuksena Base64-enkoodattuja ja pääsyä niihin voi rajoittaa tarkemmin.</p>
+    <p>Nämä voidaan injektoida podeille ympäristömuuttujina (<code>env</code>) tai liittää tiedostoina tiedostojärjestelmään (<code>volumes</code>). Secret-resurssia käytetään vastaavasti arkaluonteisten tietojen, kuten salasanojen, välittämiseen:</p>
+    <pre><code>apiVersion: v1
+kind: Secret
+metadata:
+  name: database-secret
+type: Opaque
+stringData:
+  DB_USER: demo_user
+  DB_PASSWORD: vaihda-tama-salasana</code></pre>
+    <p>Pod voi käyttää Secretin arvoja ympäristömuuttujina:</p>
+    <pre><code>env:
+  - name: DB_USER
+    valueFrom:
+      secretKeyRef:
+        name: database-secret
+        key: DB_USER
+  - name: DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: database-secret
+        key: DB_PASSWORD</code></pre>
+    <p><code>stringData</code> helpottaa tekstimuotoisten arvojen kirjoittamista, mutta oikeita salasanoja ei pidä tallentaa YAML-tiedostoon tai versionhallintaan. Secretin <code>data</code>-kentän Base64-koodaus ei myöskään ole salausta, joten käyttöoikeudet ja erillinen salaisuuksien hallinta ovat tuotannossa tärkeitä.</p>
 
     <h2>7. PersistentVolume – Pysyvä tallennustila</h2>
     <p>Kontin paikallinen tiedostojärjestelmä tyhjenee, kun kontti käynnistyy uudelleen. Pysyvää dataa (kuten tietokannat) varten käytetään abstraktioita:</p>
@@ -117,6 +138,17 @@ kubectl logs &lt;podin-nimi&gt;
 # Poista resurssi
 kubectl delete -f deployment.yaml</code></pre>
     <p>Yleisin käytäntö on hallita määrityksiä versionhallinnassa (Git) deklaratiivisesti ja ajaa ne klusteriin <code>kubectl apply</code> -komennolla tai automatisoidulla GitOps-työkalulla.</p>
+
+<h2>9. Yhteenveto</h2>
+<ul>
+  <li><strong>Control Plane</strong> hallitsee klusterin tilaa ja päättää, miten sovelluksia ajetaan.</li>
+  <li><strong>Worker Node</strong> on palvelin, jolla sovelluskontit suoritetaan.</li>
+  <li><strong>Pod</strong> on Kuberneteksen pienin ajettava yksikkö, ja <strong>Deployment</strong> hallitsee podien elinkaarta ja itsekorjautuvuutta (self-healing).</li>
+  <li><strong>Service</strong> tarjoaa podeille vakaan verkkonimen ja ohjaa liikenteen oikeille podeille.</li>
+  <li><strong>ConfigMap</strong> sopii tavallisille asetuksille ja <strong>Secret</strong> arkaluonteisille tiedoille.</li>
+  <li><strong>PersistentVolume</strong> ja <strong>PersistentVolumeClaim</strong> mahdollistavat tiedon säilyttämisen podien elinkaaren yli.</li>
+  <li><code>kubectl apply</code> ottaa YAML-määritykset käyttöön klusterissa deklaratiivisesti.</li>
+</ul>
   </main>
 </body>
 </html>
