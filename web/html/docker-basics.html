@@ -25,7 +25,7 @@ COPY html/ /usr/share/nginx/html/</code></pre>
       <li><code>FROM</code> valitsee pohjaksi kevyen nginx-imagen.</li>
       <li><code>COPY</code> siirtää tämän projektin <code>web/html/</code>-kansion nginxin tarjoiltavaksi.</li>
     </ul>
-    <p>Myös muistiinpanojen API rakennetaan omasta Dockerfilesta. Se käyttää Node.js:n Alpine-imagea, asentaa <code>package.json</code>-tiedoston riippuvuudet ja käynnistää <code>server.js</code>-tiedoston. Näin sama perusidea toimii eri sovelluksille.</p>
+    <p>Myös muistiinpanojen API rakennetaan omasta Dockerfilesta. Se käyttää Node.js:n Alpine-imagea, asentaa <code>package.json</code>-tiedoston riippuvuudet ja käynnistää muistiinpanojen API-palvelun. Näin sama perusidea toimii eri sovelluksille.</p>
 
     <h2>3. Imagen rakentaminen ja kontin käynnistäminen</h2>
     <p>Kun komento suoritetaan tämän repositoryn juurikansiosta, web-palvelun imagen voi rakentaa ja käynnistää näin:</p>
