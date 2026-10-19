@@ -11,7 +11,7 @@ function initNotesSidebar() {
 
     const toggle = document.createElement('button');
     toggle.id = 'sidebarToggle';
-    toggle.textContent = '📝';
+    toggle.textContent = 'muistiinpanot';
     toggle.title = 'Vedä muistiinpanosivupalkki auki tai kiinni';
     toggle.onclick = toggleSidebar;
     document.body.prepend(toggle);

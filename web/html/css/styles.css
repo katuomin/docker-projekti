@@ -49,23 +49,29 @@ footer { color: var(--muted); border-top: 1px solid var(--border); margin-top: 2
   transition: right 0.3s ease;
   z-index: 90;
 }
-/* Veto-korva: tab, joka on kiinni sivupalkin vasemmassa reunassa */
+/* Veto-korva: tab sivupalkin vasemmassa reunassa + pieni ulkoneva nuppipala.
+   Molemmat osat käyttävät samaa 0.3s siirtymää (liike periytyy vanhemmasta
+   elementista, väri fadeaa samassa tahdissa), joten kokonaisuus toimii
+   yhtenä objektina. */
 #sidebarToggle {
   position: fixed;
   top: 50%;
   right: 0;
   transform: translateY(-50%);
-  width: 30px;
-  height: 96px;
+  width: 40px;
+  height: 220px;
   padding: 0;
   background: var(--accent);
   color: var(--bg);
   border: none;
   border-radius: 8px 0 0 8px;
-  font-size: 16px;
+  writing-mode: vertical-rl;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   cursor: pointer;
   z-index: 100;
-  transition: right 0.3s ease;
+  transition: right 0.3s ease, background 0.3s ease;
 }
 #sidebarToggle::before {
   content: '';
@@ -74,7 +80,7 @@ footer { color: var(--muted); border-top: 1px solid var(--border); margin-top: 2
   top: 50%;
   transform: translateY(-50%);
   width: 10px;
-  height: 36px;
+  height: 64px;
   background: var(--accent);
   border-radius: 6px 0 0 6px;
   transition: background 0.3s ease;
