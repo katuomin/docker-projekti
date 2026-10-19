@@ -1,24 +1,24 @@
-# Terraform on AWS Academy Learner Lab
+# Terraform AWS Academy Learner Labissa
 
-A reduced version of [../terraformexample](../terraformexample) for the
-restricted Learner Lab account. It creates just a security group and one EC2
-instance that runs the existing `docker-compose.yaml`.
+## Mitä eroja täysillä oikeuksilla tehtyihin ympäristöihin ?
 
-## What differs from `terraformexample`
-
-| Learner Lab limit | Handling here |
+| Learner Lab -rajoite | Ratkaisu tässä versiossa |
 |---|---|
-| Cannot create IAM roles/instance profiles | Attaches the pre-made `LabInstanceProfile` (optional) |
-| VPC/subnet/gateway creation often denied | Uses the default VPC; AWS picks a subnet in an AZ that supports the instance type |
-| Only `us-east-1` / `us-west-2` | Default region `us-east-1` |
-| Small instance types only | `t3.small` default |
-| Credentials expire with the session | Uses the temporary keys from the lab |
-| Session Manager may not work | SSH on port 22 with the lab's `vockey` key |
+| IAM-rooleja / instance profiileja ei voi luoda | Liittää valmiin `LabInstanceProfile`-profiilin (valinnainen) |
+| VPC:n/aliverkkojen/yhdyskäytävien luonti on usein estetty | Käyttää oletus-VPC:tä; AWS valitsee aliverkon saatavilla olevasta AZ:sta instanssityypin mukaan |
+| Vain `us-east-1` / `us-west-2` käytettävissä | Oletusalue `us-east-1` |
+| Vain pieniä instanssityyppejä | Oletuksena `t3.small` |
+| Tunnukset vanhenevat sessioiden mukana | Käyttää laboratorion väliaikaisia avaimia |
+| Session Manager ei välttämättä toimi | SSH portissa 22 laboratorion `vockey`-avaimella |
 
-## Steps
+## Vaiheet
 
-1. Start the lab and open **AWS Details → Show**. Copy the three values.
-2. Set them in the terminal where you run Terraform:
+1. Käynnistä labra ja avaa **AWS Details → Show**.
+2. Kopioi kohdasta **AWS CLI** nämä kolme arvoa:
+   - `AWS_ACCESS_KEY_ID` (alkaa usein `ASIA...`)
+   - `AWS_SECRET_ACCESS_KEY`
+   - `AWS_SESSION_TOKEN`
+3. Aseta arvot samaan terminaaliin, jossa ajat `terraform`-komennot:
 
    ```powershell
    $env:AWS_ACCESS_KEY_ID     = "ASIA..."
@@ -27,36 +27,58 @@ instance that runs the existing `docker-compose.yaml`.
    $env:AWS_REGION            = "us-east-1"
    ```
 
-   (WSL/bash: `export AWS_ACCESS_KEY_ID=...` and so on.) Alternatively paste
-   them into `~/.aws/credentials` under `[default]`.
-3. Check them: `aws sts get-caller-identity`.
-4. Deploy:
-
-   ```
-   terraform init
-   terraform apply
+   WSL/bash:
+   ```bash
+   export AWS_ACCESS_KEY_ID="ASIA..."
+   export AWS_SECRET_ACCESS_KEY="..."
+   export AWS_SESSION_TOKEN="..."
+   export AWS_REGION="us-east-1"
    ```
 
-5. Open the `web_url` output after a few minutes (first boot installs Docker and
-   builds images).
+   Vaihtoehtoisesti voit lisätä arvot tiedostoon `~/.aws/credentials`
+   profiilin `[default]` alle:
+   ```ini
+   [default]
+   aws_access_key_id=ASIA...
+   aws_secret_access_key=...
+   aws_session_token=...
+   ```
 
-No variables are required. The repository URL defaults to this repository, so
-it must be public and the branch must exist (`main` by default). To use another
-branch: `terraform apply -var repository_branch=terraformtesti`.
+4. Tarkista tunnukset:
+   ```bash
+   aws sts get-caller-identity
+   ```
 
-## Troubleshooting
+5. Ota ympäristö käyttöön:
 
-- **Credential errors / `ExpiredToken`:** the lab session ended or keys changed.
-  Copy fresh values and re-export them. Don't leave the `~/.aws/credentials`
-  entry stale.
-- **Instance profile or key pair not found:** set `-var instance_profile_name=""`
-  or `-var key_name=""`.
-- **Check boot progress** over SSH: `sudo tail -f /var/log/user-data.log` and
-  `cd /opt/docker-projekti && sudo docker compose ps`.
-- **Restrict access:** `-var allowed_cidr="<your-ip>/32"`.
+    terraform init
+    terraform apply
 
-## Cleanup
+6.  Avaa web_url-output muutaman minuutin kuluttua (ensimmäisellä käynnistyksellä
+    Docker asennetaan ja imaget rakennetaan).
 
-Run `terraform destroy` before ending the lab. If the lab resets, the state
-file may point at resources that no longer exist; delete the local
-`terraform.tfstate*` files and start again.
+Muuttujia ei vaadita. Repositorion URL osoittaa oletuksena tähän repositoryyn,
+joten sen pitää olla julkinen ja haaran pitää olla olemassa (main oletuksena).
+
+
+Vianmääritys
+    Credential-virheet / ExpiredToken: labrasessio päättyi tai avaimet vaihtuivat.
+    Kopioi uudet arvot ja vie ne uudelleen ympäristömuuttujiin. Vältä vanhentuneita
+    merkintöjä tiedostossa ~/.aws/credentials.
+
+    Instance profile tai key pair puuttuu: käytä
+    -var instance_profile_name="" tai -var key_name="".
+
+    Tarkista käynnistyksen eteneminen SSH:n kautta:
+    sudo tail -f /var/log/user-data.log ja
+    cd /opt/docker-projekti && sudo docker compose ps.
+
+    Rajoita pääsyä: -var allowed_cidr="<oma-ip>/32".
+
+
+Siivous
+
+
+Aja "terraform destroy" komento ennen labran päättämistä. Jos labra nollautuu, state-tiedosto
+voi viitata resursseihin, joita ei enää ole. Poista paikalliset
+terraform.tfstate*-tiedostot ja aloita uudelleen.
