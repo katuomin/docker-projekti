@@ -41,6 +41,9 @@ Ympäristön voi kokeilun jälkeen tuhota komennolla
 
     docker compose down
 
+Esimerkki kuinka suorittaa tämä rakenne AWS-pilvessä, jonka ympäristö
+on määritelty Terraformin avulla, katso [terraformlearnerlab/README.md](terraformlearnerlab/README.md).
+
 ## Verkot
 
 Ympäristö käyttää kahta Docker-verkkoa:
@@ -59,6 +62,3 @@ Tarkistaa Notes-api-, web- ja database-konttien päätepisteiden(endpoints) toim
 Isäntäkoneen tiedosto ./proxy/nginx.conf liitetään kontin sisälle bind mountilla (/etc/nginx/conf.d/default.conf:ro), jolloin hostilla tehdyt muutokset näkyvät kontissa heti (":ro" tekee nginx-konfiguraation kontissa vain luku -tilaan, joten proxy ei voi muokata projektin tiedostoa).
 PostgreSQL taas tallentaa datan Dockerin hallitsemaan nimettyyn volyymiin pgdata (/var/lib/postgresql/data), joten muistiinpanot säilyvät konttien uudelleenkäynnistyksissä ja uudelleenluonnissa.
 Huom: data poistuu vain, jos volyymi poistetaan erikseen (esim. docker compose down -v).
-
-Esimerkki kuinka suorittaa tämä rakenne AWS-pilvessä, jonka ympäristö
-on määritelty Terraformin avulla, katso [terraformlearnerlab/README.md](terraformlearnerlab/README.md).
