@@ -44,8 +44,8 @@
 
 5. Ota ympäristö käyttöön:
 
-    terraform init
-    terraform apply
+        terraform init
+        terraform apply
 
 6.  Avaa web_url-output muutaman minuutin kuluttua (ensimmäisellä käynnistyksellä
     Docker asennetaan ja imaget rakennetaan).
