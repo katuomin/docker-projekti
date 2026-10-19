@@ -58,7 +58,7 @@ cd notes-api
 npm install --no-audit --no-fund</code></pre>
     <p>Näin CI havaitsee syntaksivirheet ja riippuvuuksien asennusongelmat ennen kuin sovellusta yritetään ajaa Dockerissa.</p>
 
-    <h2>6. Docker-imagien rakentaminen</h2>
+    <h2>6. Docker-kuvien rakentaminen</h2>
     <p><code>images</code>-tehtävä rakentaa projektin omat kuvat:</p>
     <pre><code>docker build -t web-ci ./web
 docker build -t notes-api-ci ./notes-api</code></pre>
@@ -80,7 +80,7 @@ terraform validate</code></pre>
     <p>Putken tehtävät on ketjutettu niin, että seuraava vaihe käyttää vain onnistuneen edellisen vaiheen tulosta:</p>
     <pre><code>package  &lt;- lint, test
 deploy   &lt;- lint, test, package, stack, images, terraform</code></pre>
-    <p>Deploy ei siis voi edetä, jos esimerkiksi testit epäonnistuvat, Compose-tiedosto ei ole kelvollinen, Docker-image ei rakennu tai Terraformin validointi epäonnistuu.</p>
+    <p>Deploy ei siis voi edetä, jos esimerkiksi testit epäonnistuvat, Compose-tiedosto ei ole kelvollinen, Docker-kuva ei rakennu tai Terraformin validointi epäonnistuu.</p>
 
     <h2>9. Deploy vain version tageilla</h2>
     <p><code>deploy</code>-tehtävän ehto on:</p>
@@ -100,7 +100,7 @@ role-to-assume: ${{ vars.DEPLOY_ROLE_ARN }}</code></pre>
     <p>Työnkululla on oletuksena vain <code>contents: read</code> -oikeus. Deploy-tehtävä saa lisäksi <code>id-token: write</code> -oikeuden, koska se tarvitsee sitä lyhytkestoisen OIDC-tokenin luomiseen. IAM-roolin ARN luetaan repositoryn muuttujasta <code>DEPLOY_ROLE_ARN</code>.</p>
 
     <h2>11. Samat tarkistukset paikallisesti</h2>
-    <p>Virheet kannattaa löytää jo ennen pushia. Keskeiset CI-komennot voi ajaa omalla koneella:</p>
+    <p>Tarkistukset kannattaa ajaa omalla koneella ennen muutosten lähettämistä. Keskeiset CI-komennot voi ajaa omalla koneella:</p>
     <pre><code>ruff check healthcheck tests
 pytest -v
 python -m build
