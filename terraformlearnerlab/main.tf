@@ -1,6 +1,4 @@
-# Learner Lab version: creates only a security group and one EC2 instance.
-# No IAM roles, VPCs, subnets, gateways or route tables are created, because
-# those calls are typically denied in the lab.
+# AWS learner lab compatible terraform script
 
 # Use the account's default VPC and one of its default subnets instead of
 # building our own network.
@@ -60,12 +58,12 @@ resource "aws_security_group" "instance" {
   }
 }
 
-# Cloud-init installs Docker, clones the repo and runs the existing Compose file.
+# Cloud-init installs Docker, clones the repo and runs the Compose file.
 resource "aws_instance" "example" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
   # No subnet_id: AWS picks a default subnet in an AZ that supports the
-  # instance type (fixes "not supported in us-east-1e").
+  # instance type 
   vpc_security_group_ids      = [aws_security_group.instance.id]
   associate_public_ip_address = true
 
