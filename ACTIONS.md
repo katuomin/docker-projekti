@@ -1,23 +1,23 @@
 ## Repon rakenne
 
-| Polku | Mikä |
+| Polku | Kuvaus |
 |---|---|
-| `docker-compose.yaml` | Stack: web, proxy, notes-api, database |
-| `web/`, `proxy/`, `notes-api/`, `db/` | Palvelumääritykset (Node/Express + nginx + Postgres) |
-| `healthcheck/` | Pieni Python-CLI (paketti) HTTP-päätteiden tilan tarkistukseen |
-| `tests/` | `healthcheck`-yksikkötestit (pytest), sisält. raja-arvotestit |
-| `.github/workflows/ci.yml` | CI/CD-putki |
+| `docker-compose.yaml` | Docker Compose -kokoonpano: web, proxy, notes-api ja database |
+| `web/`, `proxy/`, `notes-api/`, `db/` | Palveluiden määritykset (Node.js/Express, nginx ja PostgreSQL) |
+| `healthcheck/` | Pieni Python-komentorivityökalu HTTP-päätepisteiden tilan tarkistamiseen |
+| `tests/` | `healthcheck`-paketin yksikkötestit (`pytest`), myös raja-arvotestit |
+| `.github/workflows/ci.yml` | CI/CD-työnkulku |
 
-## Ajo-ohjeet paikallisesti
+## Paikallinen käyttö
 
 ```bash
-python3 -m pip install -e ".[dev]"   # asettaa healthcheck + ruff, pytest, build
-ruff check healthcheck tests         # lint (sama kuin CI:n lint-job)
-pytest -v                            # yksikkötestit (sama kuin CI:n test-job)
-python3 -m build                     # pakkauksen sdist + wheel -> dist/
+python3 -m pip install -e ".[dev]"   # asentaa healthcheck-paketin ja kehitystyökalut
+ruff check healthcheck tests         # koodin tarkistukset (sama komento kuin CI:n lint-tehtävässä)
+pytest -v                            # yksikkötestit (sama komento kuin CI:n test-tehtävässä)
+python3 -m build                     # rakentaa sdist- ja wheel-jakelut dist/-hakemistoon
 ```
 
-CLI:n kokeilu (parse-only -tila ei vaadi verkkoa):
+Komentorivityökalun kokeilu (pelkkä jäsennystila ei vaadi verkkoyhteyttä):
 
 ```bash
 healthcheck http://localhost:3000/health
@@ -26,39 +26,41 @@ healthcheck --check --retries 3 http://localhost:3000/health
 
 ## CI-putki
 
-`.github/workflows/ci.yml` käynnistyy `push`- ja `pull_request`-triggereillä.
+`.github/workflows/ci.yml` käynnistyy `push`- ja `pull_request`-tapahtumista.
 
-| Job | Tehtävä | Riippuu |
+| Tehtävä | Kuvaus | Riippuvuudet |
 |---|---|---|
-| `lint` | `ruff check` -tarkistus `healthcheck/` ja `tests/` | — |
-| `test` | `pytest -v` (yksikkötestit, myöskin raja-arvotestit) | — |
-| `package` | `python -m build`, ladataan `dist/*.whl` + `dist/*.tar.gz` artefaktina nimellä `healthcheck-<sha>` (säilytys 14 pv) | lint, test |
-| `deploy` | Avaineton OIDC-deploy (AWS IAM roolin ottaminen) | lint, test, package |
+| `lint` | Tarkistaa `healthcheck/`- ja `tests/`-hakemistot komennolla `ruff check` | — |
+| `test` | Suorittaa yksikkötestit komennolla `pytest -v`, myös raja-arvotestit | — |
+| `package` | Rakentaa jakelupaketit komennolla `python -m build` ja tallentaa tiedostot `dist/*.whl` ja `dist/*.tar.gz` artefaktiksi nimellä `healthcheck-<sha>`. Artefakti säilytetään 14 päivää. | `lint`, `test` |
+| `deploy` | Avaimeton käyttöönotto: OIDC-tunnistautuminen ja AWS:n IAM-roolin käyttö | `lint`, `test`, `package` |
 
-`deploy` ajetaan vain `v*`-tagien päällä. Se käyttää GitHub-ympäristöä
-(`production`) ja OIDC-tokenia ottamaan IAM-roolin — ei long-lived -avaimia
-missään. Rolin ARN luetaan repon muuttujasta `DEPLOY_ROLE_ARN`.
+`deploy` suoritetaan vain `v*`-tageihin liittyvissä ajoissa. Se käyttää GitHubin `production`-ympäristöä ja OIDC-tokenia IAM-roolin käyttöön. Pitkäaikaisia avaimia ei tallenneta. Roolin ARN luetaan tietovaraston `DEPLOY_ROLE_ARN`-muuttujasta.
+
+## Dokumentoitu CI-virhe
+
+1. **Virheen aiheuttanut commit:** `57dd037` ”hajooko” (muutettiin `healthcheck/core.py`-tiedostossa 500-tilakoodin luokitus arvosta `"down"` arvoon `"guh????"`).
+2. **Epäonnistunut ajo:** [ajo #4](https://github.com/katuomin/docker-projekti/actions/runs/39035527857)
+   - `Lint (ruff)` meni läpi, mutta `Test (pytest)` epäonnistui (exit code 1).
+   - `Package`- ja `Deploy`-tehtävät ohitettiin (`needs: [lint, test]`), joten epäonnistuneesta ajosta ei syntynyt artefaktia.
+   - Testin lokissa näkyi:
+     ```
+     >       assert classify_status(500) == "down"
+     E       AssertionError: assert 'guh????' == 'down'
+     ```
+   - Lokista käyvät ilmi testin nimi, assert-lause sekä odotettu ja toteutunut arvo. Virheen sijainti löytyy ilman lisätarkistuksia.
+3. **Korjaus:** `e6f485f` "sori korjasin". Putki meni jälleen läpi: [ajo #5](https://github.com/katuomin/docker-projekti/actions/runs/39035614272).
 
 ## Turvallisuus
 
-- **Least privilege:** workflow määrittelee `permissions: contents: read` ylimmän
-  tasolla. Ainoa komento, joka tarvitsee enemmän, on `deploy`, joka lisää
-  `id-token: write` vain itselleen.
-- **Ei salaisuksia repossa:** putki ei käytä yhtään `secrets`-muuttujaa. Ainoa
-  luottamusarvo on GitHubin `GITHUB_TOKEN`, rajoitettu yllä oleviin oikeuksiin.
-- **Environments:** lint/test/package ajetaan `ci`-ympäristössä ja deploy
-  `production`-ympäristössä, jotta suojailusääntöjä (esim. pakolliset
-  approvaarit) voi kiinnittää vaiheittain.
-- **Avaimetonta (OIDC) deploy-suunnitelma:** sen sijaan, että tallennettaisiin
-  long-lived -AWS-avaimet, deploy-job esittää lyhytaikaisen OIDC-tokenin ja
-  ottaa IAM-roolin (`aws-actions/configure-aws-credentials`,
-  `audience: sts.amazonaws.com`). Rolin trust policy sallii
-  `token.actions.githubusercontent.com` tälle repon, ja otetut todistuskirjat
-  vanhentuvat alle tunnin kuluessa.
+## Tietoturva
 
-## Kustannus
+- **Vähimmän oikeuden periaate:** työnkulku määrittää ylimmällä tasolla oikeudeksi `permissions: contents: read`. Vain `deploy` tarvitsee laajemmat oikeudet: sille annetaan lisäksi `id-token: write`.
+- **Ei salaisuuksia tietovarastossa:** putki ei käytä `secrets`-muuttujia. GitHubin automaattisesti luoman `GITHUB_TOKEN`-tunnuksen oikeudet rajataan yllä mainitulla tavalla.
+- **Ympäristöt:** `lint`-, `test`- ja `package`-tehtävät suoritetaan `ci`-ympäristössä ja `deploy`-tehtävä `production`-ympäristössä. Näin ympäristöjen suojauksia, kuten pakollisia hyväksyntöjä, voidaan ottaa käyttöön vaiheittain.
+- **Avaimeton käyttöönotto OIDC:n avulla:** pitkäaikaisten AWS-avainten tallentamisen sijaan käyttöönotto pyytää lyhytikäisen OIDC-tokenin ja pyytää AWS:ltä väliaikaiset tunnistetiedot IAM-roolin käyttöä varten (`aws-actions/configure-aws-credentials`, `audience: sts.amazonaws.com`). Roolin luottamuskäytäntö sallii `token.actions.githubusercontent.com`-tunnisteen käytön tässä tietovarastossa. Väliaikaiset tunnistetiedot vanhenevat alle tunnissa.
 
-- GitHub Actions on ilmainen julkisille repoille (epärajoitettu minuuttimäärä).
-  Putki ajaa alle 2 minuutissa push kohden, joten myös yksityisellä repolla
-  (2 000 ilmaista minuuttia/kk) se vie hyvin alle 1 % kvotasta.
-- Artefaktit ovat muutamia kilotavua per build ja säilytetään 14 päivää.
+## Kustannukset
+
+- GitHub Actions on maksuton julkisissa tietovarastoissa, eikä niissä ole minuuttirajaa. Putki kestää alle kaksi minuuttia kutakin `push`-tapahtumaa kohti. Myös yksityisessä tietovarastossa se kuluttaa siis selvästi alle yhden prosentin 2 000 minuutin kuukausittaisesta maksuttomasta kiintiöstä.
+- Rakennustuotannot ovat kooltaan muutamia kilotavuja, ja niitä säilytetään 14 päivää.
