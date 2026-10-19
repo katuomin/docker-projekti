@@ -4,6 +4,7 @@ set -euxo pipefail
 # Send cloud-init output to the normal system log so startup failures are visible.
 exec > >(tee -a /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
 
+# Install updates & Docker
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y ca-certificates curl git
 curl -fsSL https://get.docker.com/ -o install-docker.sh
@@ -14,5 +15,5 @@ systemctl enable --now docker
 git clone --depth 1 --branch "${repository_branch}" "${repository_url}" /opt/docker-projekti
 cd /opt/docker-projekti
 
-# This starts the same four services as local Docker Compose, including Postgres.
+# This starts the containers.
 docker compose up -d --build

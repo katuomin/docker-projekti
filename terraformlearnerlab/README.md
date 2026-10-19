@@ -5,11 +5,11 @@
 | Learner Lab -rajoite | Ratkaisu tässä versiossa |
 |---|---|
 | IAM-rooleja / instance profiileja ei voi luoda | Liittää valmiin `LabInstanceProfile`-profiilin (valinnainen) |
-| VPC:n/aliverkkojen/yhdyskäytävien luonti on usein estetty | Käyttää oletus-VPC:tä; AWS valitsee aliverkon saatavilla olevasta AZ:sta instanssityypin mukaan |
+| VPC:n/aliverkkojen/yhdyskäytävien luonti on usein rajoitettu | Käyttää oletus-VPC:tä; AWS valitsee aliverkon saatavilla olevasta AZ:sta instanssityypin mukaan |
 | Vain `us-east-1` / `us-west-2` käytettävissä | Oletusalue `us-east-1` |
 | Vain pieniä instanssityyppejä | Oletuksena `t3.small` |
-| Tunnukset vanhenevat sessioiden mukana | Käyttää laboratorion väliaikaisia avaimia |
-| Session Manager ei välttämättä toimi | SSH portissa 22 laboratorion `vockey`-avaimella |
+| Tunnukset vanhenevat sessioiden mukana | Käyttää labran väliaikaisia avaimia |
+| Session Manager ei välttämättä toimi | SSH portissa 22 labran `vockey`-avaimella |
 
 ## Vaiheet
 
@@ -19,13 +19,6 @@
    - `AWS_SECRET_ACCESS_KEY`
    - `AWS_SESSION_TOKEN`
 3. Aseta arvot samaan terminaaliin, jossa ajat `terraform`-komennot:
-
-   ```powershell
-   $env:AWS_ACCESS_KEY_ID     = "ASIA..."
-   $env:AWS_SECRET_ACCESS_KEY = "..."
-   $env:AWS_SESSION_TOKEN     = "..."
-   $env:AWS_REGION            = "us-east-1"
-   ```
 
    WSL/bash:
    ```bash
