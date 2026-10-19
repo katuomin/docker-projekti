@@ -12,7 +12,6 @@ Sivusto koostuu seuraavista konteista:
 
 ## Ympäristön rakenne:
 
-
 Docker lukee docker-compose.yaml-tiedoston ja käynnistää palvelut riippuvuuksien mukaan.
 Proxy palvelu käynnistyy vasta, kun web palvelu on toimintakunnossa, ja notes-api palvelu käynnistyy vasta, kun database on toimintakunnossa (depends_on: condition: service_healthy).
 Muut kontit ja niiden palvelut käynnistetään rinnakkain heti alussa. 
@@ -24,11 +23,9 @@ Esivaatimukset:
 - Docker isäntäkoneella
 - Git
 
-
-
 Kloonaa repo:
 
-   `git clone https://github.com/katuomin/docker-projekti.git`
+    git clone https://github.com/katuomin/docker-projekti.git
 
 Mene kansion sisälle esimerkiksi WSL:ää käyttäen
 
@@ -44,9 +41,7 @@ Ympäristön voi kokeilun jälkeen tuhota komennolla
 
     docker compose down
 
-
 ## Verkot
-
 
 Ympäristö käyttää kahta Docker-verkkoa:
 
@@ -55,16 +50,11 @@ Ympäristö käyttää kahta Docker-verkkoa:
 
 Ympäristö käyttää kahta verkkoa: frontend-network ja backend-network. Taustalla toimiva database-kontti on pelkästään sisäisessä backend-network verkossa. Pelkästään frontend-network verkossa on web- ja proxy-kontit. Verkkojen välistä kommunikointia hoitaa api-kontti, joka on molemmissa verkoissa.
 
-
-
-
-
-## Healthchecks
+## Healthcheckit
 
 Tarkistaa Notes-api-, web- ja database-konttien päätepisteiden(endpoints) toimivuuden ympäristöä luodessa. Tarkemmat ohjeet manuaalisten tarkistusten ajamiseen ACTIONS.md tiedostossa.
 
-## Volumes
-
+## Volyymit
 
 Isäntäkoneen tiedosto ./proxy/nginx.conf liitetään kontin sisälle bind mountilla (/etc/nginx/conf.d/default.conf:ro), jolloin hostilla tehdyt muutokset näkyvät kontissa heti (":ro" tekee nginx-konfiguraation kontissa vain luku -tilaan, joten proxy ei voi muokata projektin tiedostoa).
 PostgreSQL taas tallentaa datan Dockerin hallitsemaan nimettyyn volyymiin pgdata (/var/lib/postgresql/data), joten muistiinpanot säilyvät konttien uudelleenkäynnistyksissä ja uudelleenluonnissa.
