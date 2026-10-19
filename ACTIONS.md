@@ -51,8 +51,6 @@ healthcheck --check --retries 3 http://localhost:3000/health
    - Lokista käyvät ilmi testin nimi, assert-lause sekä odotettu ja toteutunut arvo. Virheen sijainti löytyy ilman lisätarkistuksia.
 3. **Korjaus:** `e6f485f` "sori korjasin". Putki meni jälleen läpi: [ajo #5](https://github.com/katuomin/docker-projekti/actions/runs/39035614272).
 
-## Turvallisuus
-
 ## Tietoturva
 
 - **Vähimmän oikeuden periaate:** työnkulku määrittää ylimmällä tasolla oikeudeksi `permissions: contents: read`. Vain `deploy` tarvitsee laajemmat oikeudet: sille annetaan lisäksi `id-token: write`.
