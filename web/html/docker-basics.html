@@ -17,7 +17,7 @@
     <p>Ajattele asiaa näin: <strong>image</strong> on valmis resepti tai muotti, ja <strong>kontti</strong> on siitä käynnistetty sovellus. Samasta imagesta voi käynnistää useita kontteja.</p>
 
     <h2>2. Image, kontti ja Dockerfile</h2>
-    <p><strong>Image</strong> sisältää sovelluksen suorittamiseen tarvittavat tiedostot. <strong>Dockerfile</strong> kertoo, miten image rakennetaan. Kun image käynnistetään, syntyy kontti.</p>
+    <p><strong>Image</strong> sisältää sovelluksen suorittamiseen tarvittavat tiedostot. <strong>Dockerfile</strong> kertoo, miten image rakennetaan. Kun <code>docker run</code> -komento suoritetaan, Docker luo imagen perusteella uuden kontin ja käynnistää sen.</p>
     <p>Tämän repositoryn web-palvelun Dockerfile on hyvin pieni:</p>
     <pre><code>FROM nginx:alpine
 COPY html/ /usr/share/nginx/html/</code></pre>
@@ -30,14 +30,14 @@ COPY html/ /usr/share/nginx/html/</code></pre>
     <h2>3. Imagen rakentaminen ja kontin käynnistäminen</h2>
     <p>Kun komento suoritetaan tämän repositoryn juurikansiosta, web-palvelun imagen voi rakentaa ja käynnistää näin:</p>
     <pre><code>docker build -t docker-rojekti-web ./web
-docker run --rm -p 8080:80 docker-rojekti-web</code></pre>
-    <p>Komento on tässä repositoriossa oikein: <code>./web</code> on rakennuskonteksti, ja sen sisältä löytyy <code>Dockerfile</code> sekä <code>html/</code>-kansio. Siksi Docker löytää sekä Dockerfilen että sen <code>COPY html/</code> -komennon tarvitsemat tiedostot.</p>
+docker run --rm -p 80:80 docker-rojekti-web</code></pre>
+    <p>Tämä komento toimii tässä repositoriossa, koska <code>./web</code> määrittää rakennuskontekstiksi <code>web/</code>-kansion. Kansiossa ovat sekä <code>Dockerfile</code> että <code>html/</code>-kansio, joten Docker löytää Dockerfilen ja <code>COPY html/</code> -komennon tarvitsemat tiedostot.</p>
     <p>Jos olet jo <code>web</code>-kansiossa, vastaava komento on <code>docker build -t docker-rojekti-web .</code>. Piste tarkoittaa nykyistä kansiota.</p>
-    <p><code>-t</code> antaa imagelle nimen. <code>docker run</code> käynnistää imagesta kontin, <code>--rm</code> poistaa kontin pysäyttämisen jälkeen ja <code>-p 8080:80</code> yhdistää oman koneen portin 8080 kontin nginx-porttiin 80. Tämän jälkeen sivu avautuu osoitteessa <a href="http://localhost:8080">http://localhost:8080</a>.</p>
+    <p><code>-t</code> antaa imagelle nimen. <code>docker run</code> käynnistää imagesta kontin, <code>--rm</code> poistaa kontin pysäyttämisen jälkeen ja <code>-p 80:80</code> yhdistää oman koneen portin 80 kontin nginx-porttiin 80. Tämän jälkeen sivu avautuu osoitteessa <a href="http://localhost">http://localhost</a>.</p>
 
     <h2>4. Kontin elinkaari</h2>
     <pre><code># Käynnistä web-kontti
-docker run --name web-kontti -p 8080:80 docker-rojekti-web
+docker run --name web-kontti -p 80:80 docker-rojekti-web
 
 # Näytä käynnissä olevat kontit
 docker ps
