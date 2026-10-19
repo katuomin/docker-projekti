@@ -72,7 +72,7 @@ docker compose logs -f</code></pre>
     <p>Palvelun nimi toimii Composen sisäisenä DNS-nimenä. Siksi API voi ottaa yhteyden tietokantaan osoitteella <code>database:5432</code>, eikä tietokannan IP-osoitetta tarvitse tietää etukäteen.</p>
 
     <h2>5. Rakentaminen ja imaget</h2>
-    <p><code>web</code>-palvelun kohta <code>build: ./web</code> käyttää rakennuskontekstina <code>web</code>-kansiota. Sen Dockerfile kopioi HTML-sisällön nginxin tarjoiltavaksi. <code>notes-api</code> rakennetaan vastaavasti kansiosta <code>./notes-api</code>; sen Dockerfile asentaa Node-riippuvuudet ja käynnistää <code>server.js</code>-tiedoston.</p>
+    <p><code>web</code>-palvelun kohta <code>build: ./web</code> käyttää rakennuskontekstina <code>web</code>-kansiota. Sen Dockerfile kopioi HTML-sisällön nginxin verkkopalvelimen juurihakemistoon, josta nginx voi tarjota sen selaimelle. <code>notes-api</code> rakennetaan vastaavasti kansiosta <code>./notes-api</code>; sen Dockerfile asentaa Node-riippuvuudet ja käynnistää muistiinpanojen API-palvelun.</p>
     <pre><code>services:
   web:
     build: ./web
@@ -82,7 +82,7 @@ docker compose logs -f</code></pre>
 
   database:
     image: postgres:17-alpine</code></pre>
-    <p><code>build</code> tarkoittaa, että image tehdään projektin Dockerfilesta. <code>image</code> tarkoittaa, että Compose hakee tai käyttää valmista imagea. Molemmat palvelut voivat esiintyä samassa Compose-tiedostossa.</p>
+    <p><code>build</code> tarkoittaa, että image tehdään projektin Dockerfilesta. <code>image</code> tarkoittaa, että Compose hakee tai käyttää valmista imagea. Samaa Compose-tiedostoa voidaan käyttää molemmilla tavoilla: osa palveluista voidaan rakentaa itse ja osa käynnistää valmiista imagesta.</p>
 
     <h2>6. Reititys verkkojen avulla</h2>
     <p>Palvelut on jaettu kahteen verkkoon:</p>
@@ -112,21 +112,21 @@ location /api/ {
     <p>Palvelu <code>database</code> liittää nimetyn volyymin tietokannan datakansioon:</p>
     <pre><code>volumes:
   - pgdata:/var/lib/postgresql/data</code></pre>
-    <p>Volyymi säilyttää PostgreSQL-datan, vaikka tietokantakontti poistetaan ja luodaan uudelleen. Volyymi ei kuitenkaan ole varmuuskopio: demo-tunnukset ja salasanat pitäisi oikeassa tuotannossa siirtää salaisuuksien hallintaan.</p>
+    <p>Volyymi säilyttää PostgreSQL-datan, vaikka tietokantakontti poistetaan ja luodaan uudelleen. Volyymi ei kuitenkaan ole varmuuskopio: demo-tunnukset ja salasanat pitäisi oikeassa tuotannossa säilyttää erillisessä salaisuuksien hallintapalvelussa.</p>
 
     <h2>8. Käynnistysjärjestys ja healthcheckit</h2>
-    <p><code>depends_on</code> kertoo, että proxy tarvitsee terveen <code>web</code>-palvelun ja API tarvitsee terveen <code>database</code>-palvelun. Healthcheck tarkistaa, vastaako palvelu oikeasti pyyntöihin; pelkkä kontin käynnistyminen ei vielä tarkoita, että sovellus on valmis.</p>
+    <p><code>depends_on</code> määrittää, että proxy käynnistyy vasta, kun <code>web</code>-palvelu on terve, ja API vasta, kun <code>database</code>-palvelu on terve. Healthcheck tarkistaa, vastaako palvelu oikeasti pyyntöihin; pelkkä kontin käynnistyminen ei vielä tarkoita, että sovellus on valmis.</p>
     <pre><code>depends_on:
   database:
     condition: service_healthy</code></pre>
-    <p>Tietokannan tarkistus käyttää <code>pg_isready</code>-komentoa. Web-palvelun ja API:n tarkistukset käyttävät <code>wget</code>-komentoa, joka kuuluu näiden Alpine-pohjaisten nginx- ja Node-imagejen mukana. API:n healthcheck hakee sovelluksen <code>/health</code>-reitin:</p>
+    <p>Tietokannan tarkistus käyttää <code>pg_isready</code>-komentoa. Web-palvelun ja API:n tarkistukset käyttävät <code>wget</code>-komentoa, joka on saatavilla näissä Alpine-pohjaisissa nginx- ja Node-imageissa. API:n healthcheck tarkistaa sovelluksen <code>/health</code>-päätepisteen:</p>
     <pre><code>healthcheck:
   test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
   interval: 10s
   timeout: 3s
   retries: 3
   start_period: 5s</code></pre>
-    <p>API:n <code>server.js</code> määrittelee <code>/health</code>-reitin, joka vastaa onnistuneessa tilanteessa JSON-muodossa. <code>wget</code> palauttaa onnistuneen poistumiskoodin, kun reitti vastaa, joten Compose voi merkitä API-kontin terveeksi. API:n healthcheck kertoo API:n tilan, mutta nykyisessä tiedostossa proxy ei riipu suoraan API:n healthcheckistä; proxyn käynnistyminen odottaa vain <code>web</code>-palvelun olevan terve.</p>
+    <p>API:n <code>server.js</code> määrittelee <code>/health</code>-päätepisteen, joka vastaa onnistuneessa tilanteessa JSON-muodossa. <code>wget</code> palauttaa onnistuneen poistumiskoodin, kun päätepiste vastaa, joten Compose voi merkitä API-kontin terveeksi. API:n healthcheck kertoo API:n tilan, mutta nykyisessä tiedostossa proxy ei riipu suoraan API:n healthcheckistä; proxyn käynnistyminen odottaa vain <code>web</code>-palvelun olevan terve.</p>
 
     <h2>9. Hyödylliset ylläpitokomennot</h2>
     <pre><code># Käynnistä uudelleen ilman uutta buildia
