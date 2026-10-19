@@ -42,7 +42,7 @@ missään. Rolin ARN luetaan repon muuttujasta `DEPLOY_ROLE_ARN`.
 ## Turvallisuus
 
 - **Least privilege:** workflow määrittelee `permissions: contents: read` ylimmän
-  tasolla. Ainoa job, joka tarvitsee enemmän, on `deploy`, joka lisää
+  tasolla. Ainoa komento, joka tarvitsee enemmän, on `deploy`, joka lisää
   `id-token: write` vain itselleen.
 - **Ei salaisuksia repossa:** putki ei käytä yhtään `secrets`-muuttujaa. Ainoa
   luottamusarvo on GitHubin `GITHUB_TOKEN`, rajoitettu yllä oleviin oikeuksiin.
