@@ -35,7 +35,7 @@ Rakenna ympäristö komennolla
 
     docker compose up
 
-Ympäristö lähtee pyörimään selaimella localhost:80 portissa.
+Ympäristö lähtee pyörimään selaimella osoitteessa localhost:80
 
 Ympäristön voi kokeilun jälkeen tuhota komennolla
 
