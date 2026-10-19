@@ -28,7 +28,7 @@ Esivaatimukset:
 
 Kloonaa repo:
 
-   git clone https://github.com/katuomin/docker-projekti.git
+   `git clone https://github.com/katuomin/docker-projekti.git`
 
 Mene kansion sisälle esimerkiksi WSL:ää käyttäen
 
