@@ -4,8 +4,7 @@ const API_URL = '/api/notes';
 // muistiinpanolista
 let notes = [];
 
-// Veto-korva ja sivupalkki luodaan automaattisesti, jotta sivulle riittää
-// tyylitiedoston linkki ja tämä skripti.
+// sivupalkki muistiinpanoille
 function initNotesSidebar() {
     if (document.getElementById('notesSidebar')) return;
 
@@ -20,7 +19,7 @@ function initNotesSidebar() {
     sidebar.id = 'notesSidebar';
     sidebar.innerHTML =
         '<h2>Omat muistiinpanot (Laajennusosa)</h2>' +
-        '<p class="sidebar-hint">Tämä palkki kommunikoi <strong>notes-api</strong> -kontin kanssa (portti 3000). Lue, lisää ja muokkaa muistiinpanoja.</p>' +
+        '<p class="sidebar-hint">Tämä palkki kommunikoi <strong>notes-api</strong> -kontin kanssa proxykontin kautta). Lue, lisää ja muokkaa muistiinpanoja.</p>' +
         '<div id="statusMessage" class="error-msg"></div>' +
         '<textarea id="noteInput" placeholder="Kirjoita uusi muistiinpano tähän..."></textarea>' +
         '<button onclick="addNote()">Tallenna muistiinpano</button>' +
