@@ -18,8 +18,8 @@ function initNotesSidebar() {
     const sidebar = document.createElement('aside');
     sidebar.id = 'notesSidebar';
     sidebar.innerHTML =
-        '<h2>Omat muistiinpanot (Laajennusosa)</h2>' +
-        '<p class="sidebar-hint">Tämä palkki kommunikoi <strong>notes-api</strong> -kontin kanssa proxykontin kautta). Lue, lisää ja muokkaa muistiinpanoja.</p>' +
+        '<h2>Omat muistiinpanot</h2>' +
+        '<p class="sidebar-hint">Tämä palkki kommunikoi <strong>notes-api</strong> -kontin kanssa (proxykontin kautta). Lue, lisää ja muokkaa muistiinpanoja.</p>' +
         '<div id="statusMessage" class="error-msg"></div>' +
         '<textarea id="noteInput" placeholder="Kirjoita uusi muistiinpano tähän..."></textarea>' +
         '<button onclick="addNote()">Tallenna muistiinpano</button>' +
