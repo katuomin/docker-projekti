@@ -43,13 +43,18 @@
     </ul>
 
     <h3>2. Aseta Learner Lab -tunnukset</h3>
-    <p>Syötä labin näyttämät Access key, Secret key ja Session token samaan PowerShell-istuntoon, jossa ajat Terraformia. Älä kirjoita arvoja tiedostoon tai julkaise niitä.</p>
-    <pre><code>$env:AWS_ACCESS_KEY_ID = "&lt;Access key&gt;"
-$env:AWS_SECRET_ACCESS_KEY = "&lt;Secret key&gt;"
-$env:AWS_SESSION_TOKEN = "&lt;Session token&gt;"
-$env:AWS_REGION = "us-east-1"
+    <p>Kopioi kohdasta <strong>AWS Details → Show → AWS CLI</strong> arvot <code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code> ja <code>AWS_SESSION_TOKEN</code>. Käytä ensisijaisesti WSL-/bash-terminaalia samassa istunnossa, jossa ajat Terraformia.</p>
+    <pre><code>export AWS_ACCESS_KEY_ID="&lt;Access key&gt;"
+export AWS_SECRET_ACCESS_KEY="&lt;Secret key&gt;"
+export AWS_SESSION_TOKEN="&lt;Session token&gt;"
+export AWS_REGION="us-east-1"
 aws sts get-caller-identity</code></pre>
-    <p>WSL:ssä tai bashissa käytä vastaavasti <code>export AWS_ACCESS_KEY_ID=...</code>, <code>export AWS_SECRET_ACCESS_KEY=...</code> ja <code>export AWS_SESSION_TOKEN=...</code>. Labin tunnukset vanhenevat istunnon päättyessä.</p>
+    <p>Vaihtoehtona voit tallentaa tunnukset tiedostoon <code>~/.aws/credentials</code> profiilin <code>[default]</code> alle:</p>
+    <pre><code>[default]
+aws_access_key_id=&lt;Access key&gt;
+aws_secret_access_key=&lt;Secret key&gt;
+aws_session_token=&lt;Session token&gt;</code></pre>
+    <p>Jos käytät PowerShelliä, vastaavat muuttujat voi asettaa muodossa <code>$env:AWS_ACCESS_KEY_ID="..."</code>. Labin tunnukset vanhenevat istunnon päättyessä, joten hae tarvittaessa uudet arvot.</p>
 
     <h3>3. Alusta ja tarkista Terraform</h3>
     <p>Aja komennot projektin juurihakemistosta. Terraform valitsee tässä hakemistossa olevan Learner Lab -kokoonpanon:</p>
