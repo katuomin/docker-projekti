@@ -55,7 +55,7 @@ Ympäristö käyttää kahta verkkoa: frontend-network ja backend-network. Taust
 
 ## Healthcheckit
 
-Tarkistaa Notes-api-, web- ja database-konttien päätepisteiden(endpoints) toimivuuden ympäristöä luodessa. Tarkemmat ohjeet manuaalisten tarkistusten ajamiseen ACTIONS.md tiedostossa.
+Tarkistaa api-, web- ja database-konttien päätepisteiden(endpoints) toimivuuden ympäristöä luodessa. Tarkemmat ohjeet manuaalisten tarkistusten ajamiseen ACTIONS.md tiedostossa.
 
 ## Volyymit
 
