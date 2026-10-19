@@ -45,9 +45,10 @@
 5. Ota ympäristö käyttöön:
 
         terraform init
+        terraform plan
         terraform apply
 
-6.  Avaa web_url-output muutaman minuutin kuluttua (ensimmäisellä käynnistyksellä
+7.  Avaa web_url-output muutaman minuutin kuluttua (ensimmäisellä käynnistyksellä
     Docker asennetaan ja imaget rakennetaan).
 
 Muuttujia ei vaadita. Repositorion URL osoittaa oletuksena tähän repositoryyn,
