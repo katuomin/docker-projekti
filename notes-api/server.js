@@ -46,7 +46,6 @@ app.post('/api/notes', async (req, res) => {
     try {
         const { content } = req.body;
         
-        // Käytetään backtick-hipsuja (``), jolloin \$1 pysyy puhtaana ilman takakenoviivoja
         const result = await pool.query(`INSERT INTO notes (content) VALUES ($1) RETURNING *`, [content]);
         
         res.status(201).json(result.rows);

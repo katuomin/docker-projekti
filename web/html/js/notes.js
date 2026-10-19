@@ -1,13 +1,13 @@
-// api osoite (paikallisessa testauksessa localhost:3000)
+// api osoite (reitittyy proxykontin kautta)
 const API_URL = '/api/notes';
 
-// Käsillä oleva muistiinpanolista (tallennetaan hae-kaudella)
+// muistiinpanolista
 let notes = [];
 
 // Veto-korva ja sivupalkki luodaan automaattisesti, jotta sivulle riittää
 // tyylitiedoston linkki ja tämä skripti.
 function initNotesSidebar() {
-    if (document.getElementById('notesSidebar')) return; // Älä luo kahdesti
+    if (document.getElementById('notesSidebar')) return;
 
     const toggle = document.createElement('button');
     toggle.id = 'sidebarToggle';
@@ -28,7 +28,7 @@ function initNotesSidebar() {
         '<ul id="notesList"></ul>';
     document.body.appendChild(sidebar);
 
-    // palautetaan edellisen kerran tallennettu tila
+    // palautetaan edellisen kerran tallennettu tila localstoragesta
     if (localStorage.getItem('notesSidebarOpen') === 'true') {
         document.body.classList.add('sidebar-open');
     }
