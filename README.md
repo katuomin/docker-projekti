@@ -10,7 +10,7 @@ Sivusto koostuu seuraavista konteista:
 | api-kontti | Node.js api (notes-api), joka käsittelee muistiinpanoja verkkosivun ja tietokannan välillä |
 | database-kontti | PostgreSQL-tietokanta, muistiinpanot tallennettu tänne |
 
-## Ympäristön luonti:
+## Ympäristön rakenne:
 
 
 Docker lukee docker-compose.yaml-tiedoston ja käynnistää palvelut riippuvuuksien mukaan.
@@ -18,24 +18,11 @@ Proxy palvelu käynnistyy vasta, kun web palvelu on toimintakunnossa, ja notes-a
 Muut kontit ja niiden palvelut käynnistetään rinnakkain heti alussa. 
 Ulkoinen HTTP-liikenne tulee proxy-kontin kautta portista 80 (nginx-alpine)
 
-
-## Verkot
-
-
-Ympäristö käyttää kahta Docker-verkkoa:
-
-- `frontend-network`: `web`, `proxy` ja `notes-api`
-- `backend-network` (internal): `notes-api` ja `database`
-
-Ympäristö käyttää kahta verkkoa: frontend-network ja backend-network. Taustalla toimiva database-kontti on pelkästään sisäisessä backend-network verkossa. Pelkästään frontend-network verkossa on web- ja proxy-kontit. Verkkojen välistä kommunikointia hoitaa api-kontti, joka on molemmissa verkoissa.
-
-
-
-Kuinka luot ympäristön itsellesi:
+### Alla ohjeet ympäristön luomiseen:
 
 Esivaatimukset:
-    - Docker isäntäkoneella
-    - Git
+- Docker isäntäkoneella
+- Git
 
 
 
@@ -56,6 +43,21 @@ Ympäristö lähtee pyörimään selaimella localhost:80 portissa.
 Ympäristön voi kokeilun jälkeen tuhota komennolla
 
     docker compose down
+
+
+## Verkot
+
+
+Ympäristö käyttää kahta Docker-verkkoa:
+
+- `frontend-network`: `web`, `proxy` ja `notes-api`
+- `backend-network` (internal): `notes-api` ja `database`
+
+Ympäristö käyttää kahta verkkoa: frontend-network ja backend-network. Taustalla toimiva database-kontti on pelkästään sisäisessä backend-network verkossa. Pelkästään frontend-network verkossa on web- ja proxy-kontit. Verkkojen välistä kommunikointia hoitaa api-kontti, joka on molemmissa verkoissa.
+
+
+
+
 
 ## Healthchecks
 
