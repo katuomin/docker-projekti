@@ -73,6 +73,6 @@ Vianmääritys
 Siivous
 
 
-Aja "terraform destroy" komento ennen labran päättämistä. Jos labra nollautuu, state-tiedosto
+Aja `terraform destroy` komento ennen labran päättämistä. Jos labra nollautuu, state-tiedosto
 voi viitata resursseihin, joita ei enää ole. Poista paikalliset
 terraform.tfstate*-tiedostot ja aloita uudelleen.
