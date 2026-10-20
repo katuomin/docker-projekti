@@ -51,7 +51,7 @@ Ympäristö käyttää kahta Docker-verkkoa:
 - `frontend-network`: `web`, `proxy` ja `notes-api`
 - `backend-network` (internal): `notes-api` ja `database`
 
-Ympäristö käyttää kahta verkkoa: frontend-network ja backend-network. Taustalla toimiva database-kontti on pelkästään sisäisessä backend-network verkossa. Pelkästään frontend-network verkossa on web- ja proxy-kontit. Verkkojen välistä kommunikointia hoitaa api-kontti, joka on molemmissa verkoissa.
+Taustalla toimiva database-kontti on pelkästään sisäisessä backend-network verkossa. Pelkästään frontend-network verkossa on web- ja proxy-kontit. Verkkojen välistä kommunikointia hoitaa api-kontti, joka on molemmissa verkoissa.
 
 ## Healthcheckit
 
